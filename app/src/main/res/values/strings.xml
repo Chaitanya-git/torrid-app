@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">Heatwave Risk Notifier</string>
+    <string name="not_at_risk">Not at risk</string>
+    <string name="check_button">Check</string>
+    <string name="autodetect">Autodetect</string>
+    <string name="city_selector_label">City:</string>
+    <string name="location_request_rationale">Allowing the app to use your phone\'s GPS location provider will allow us to autodetect your city to provide a localized heatwave prediction. If you do not wish to grant access to the GPS provider, deny the upcoming request and select your city manually from the dropdown in the app.</string>
+    <string name="next">Next</string>
+    <string name="gps_location_error">Error accessing GPS location</string>
+    <string name="retry">Retry</string>
+    <string name="ok">Ok</string>
+    <string name="cancel">Cancel</string>
+    <string name="gps_enable_user_request">Enable GPS location service to find current location.  Click OK to go to location services settings to let you do so.</string>
+</resources>
