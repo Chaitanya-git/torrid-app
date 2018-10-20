@@ -55,6 +55,7 @@ class Utils {
         builder.create().show();
     }
     static void sendLocationToAppServer(Context context, Location location){
+        Log.i("HEATWAVE","Sending location back to server...");
         RequestQueue queue = Volley.newRequestQueue(context);
         String endpointUrl = serverUrl+"hotloc";
         JSONObject jsonLocation = new JSONObject();
@@ -79,6 +80,7 @@ class Utils {
                     }
                 }
                 );
+        queue.add(request);
     }
 
     static void getResultsFromAppServer(Context context, Location location, final ServerResultListener listener){

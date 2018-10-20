@@ -105,7 +105,7 @@ public class StatusUpdateService extends JobService {
                             mRisk = isHeatwave;
                             Log.i("HEATWAVE", "Received result");
                             //TODO: If true send a notification
-                            if(isHeatwave) {
+                            if(!isHeatwave) {
                                 Utils.sendLocationToAppServer(getApplicationContext(), location);
                                 sendAlerts();
                             }

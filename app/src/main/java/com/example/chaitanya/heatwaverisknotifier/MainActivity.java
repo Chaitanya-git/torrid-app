@@ -1,6 +1,7 @@
 package com.example.chaitanya.heatwaverisknotifier;
 
 import android.Manifest;
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.job.JobInfo;
@@ -8,18 +9,21 @@ import android.app.job.JobService;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.preference.PreferenceManager;
+import android.renderscript.Element;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -33,8 +37,20 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptionsExtension;
+import com.google.android.gms.fitness.Fitness;
+import com.google.android.gms.fitness.FitnessOptions;
+import com.google.android.gms.fitness.SensorsClient;
+import com.google.android.gms.fitness.data.DataPoint;
+import com.google.android.gms.fitness.data.DataType;
+import com.google.android.gms.fitness.request.OnDataPointListener;
+import com.google.android.gms.fitness.request.SensorRequest;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -42,6 +58,7 @@ import org.w3c.dom.Text;
 
 import java.util.Calendar;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import uk.co.samuelwall.materialtaptargetprompt.MaterialTapTargetPrompt;
 import uk.co.samuelwall.materialtaptargetprompt.MaterialTapTargetSequence;
@@ -53,6 +70,14 @@ public class MainActivity extends AppCompatActivity {
     private static final long MAX_LOCATION_AGE = 100000;
     private static final String PREFERENCE_ENABLE_BACKGROUND_SERVICE = "enable_background_service";
     private static final String PREFERENCE_COMPLETED_ONBOARDING = "completed_onboarding";
+    private static final int GOOGLE_FIT_PERMISSIONS_REQUEST_CODE = 10;
+    private OnDataPointListener mHeartRateListener = new OnDataPointListener() {
+        @Override
+        public void onDataPoint(DataPoint dataPoint) {
+            Log.i("HEATWAVE", "Got data point" + dataPoint);
+        }
+    };
+    private SensorsClient mSensorsClient = null;
     StatusUpdateService mStatusUpdateService;
     Location currentLocation = null;
 
@@ -63,8 +88,11 @@ public class MainActivity extends AppCompatActivity {
         Utils.createNotificationChannel(this);
         final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
         CheckBox enableServiceCheckbox = findViewById(R.id.enable_background_checkbox);
+        CheckBox enableLiveTrackingCheckbox = findViewById(R.id.enable_live_tracking_checkBox);
+
         mStatusUpdateService = new StatusUpdateService();
-        Button CheckButton = findViewById(R.id.check_button);
+
+        Button checkButton = findViewById(R.id.check_button);
 
         enableServiceCheckbox.setChecked( preferences.getBoolean(PREFERENCE_ENABLE_BACKGROUND_SERVICE, false) );
         if(!preferences.getBoolean(PREFERENCE_COMPLETED_ONBOARDING, false)){
@@ -73,7 +101,7 @@ public class MainActivity extends AppCompatActivity {
             editor.putBoolean(PREFERENCE_COMPLETED_ONBOARDING, true);
             editor.apply();
         }
-        CheckButton.setOnClickListener(new View.OnClickListener() {
+        checkButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
 
@@ -142,22 +170,97 @@ public class MainActivity extends AppCompatActivity {
                     mStatusUpdateService.cancelJob(getApplicationContext());
             }
         });
+
+        enableLiveTrackingCheckbox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
+                if(isChecked) {
+                    Log.i("HEATWAVE", "Starting live tracking...");
+                    FitnessOptions fitnessOptions = FitnessOptions.builder()
+                            .addDataType(DataType.TYPE_STEP_COUNT_DELTA, FitnessOptions.ACCESS_READ)
+                            .build();
+                    if(!GoogleSignIn.hasPermissions(GoogleSignIn.getLastSignedInAccount(getApplicationContext()), fitnessOptions)){
+                        //compoundButton.setChecked(false);
+                        GoogleSignIn.requestPermissions(
+                                MainActivity.this,
+                                GOOGLE_FIT_PERMISSIONS_REQUEST_CODE,
+                                GoogleSignIn.getLastSignedInAccount(getApplicationContext()),
+                                fitnessOptions);
+                    }
+                    else {
+                        startLiveTracking();
+                    }
+                }
+                else
+                    stopLiveTracking();
+            }
+        });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent Data){
+        if(resultCode == Activity.RESULT_OK){
+            if(requestCode == GOOGLE_FIT_PERMISSIONS_REQUEST_CODE){
+                startLiveTracking();
+            }
+        }
+    }
+
+    private GoogleSignInAccount getSignedInAccount(){
+        FitnessOptions fitnessOptions = FitnessOptions.builder()
+                .addDataType(DataType.TYPE_STEP_COUNT_DELTA, FitnessOptions.ACCESS_READ)
+                .build();
+        return GoogleSignIn.getAccountForExtension(getApplicationContext(), fitnessOptions);
+    }
+    private void startLiveTracking(){
+        mSensorsClient = Fitness.getSensorsClient(getApplicationContext(), getSignedInAccount());
+        mSensorsClient.add(new SensorRequest.Builder()
+                                .setDataType(DataType.TYPE_STEP_COUNT_DELTA)
+                                .setSamplingRate(1, TimeUnit.SECONDS)
+                                .build(),
+                        mHeartRateListener
+                );
+    }
+
+    private void stopLiveTracking(){
+        //Fitness.getSensorsClient(getApplicationContext(), GoogleSignIn.getLastSignedInAccount(getApplicationContext()))
+        mSensorsClient.remove(mHeartRateListener)
+                .addOnCompleteListener(new OnCompleteListener<Boolean>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Boolean> task) {
+                        if(task.isSuccessful() && task.getResult())
+                            Log.i("HEATWAVE", "Stopped live tracking.");
+                        else
+                            Log.i("HEATWAVE", "Unable to stop live tracking.");
+                    }
+                });
     }
 
     private void showOnboarding() {
         new MaterialTapTargetPrompt.Builder(this)
                 .setTarget(R.id.check_button)
-                .setPrimaryText("Check for alerts")
-                .setSecondaryText("Press \"Check\" to quickly check for a heatwave alert in your area")
+                .setPrimaryText(R.string.check_button_onboarding_primary)
+                .setSecondaryText(R.string.check_button_onboarding_secondary)
                 .setPromptStateChangeListener(new MaterialTapTargetPrompt.PromptStateChangeListener() {
                     @Override
                     public void onPromptStateChanged(@NonNull MaterialTapTargetPrompt prompt, int state) {
-                        if(state == MaterialTapTargetPrompt.STATE_FOCAL_PRESSED)
+                        if(state == MaterialTapTargetPrompt.STATE_FOCAL_PRESSED || state == MaterialTapTargetPrompt.STATE_NON_FOCAL_PRESSED)
                             new MaterialTapTargetPrompt.Builder(MainActivity.this)
                                     .setTarget(R.id.enable_background_checkbox)
-                                    .setPrimaryText("Enable background service")
-                                    .setSecondaryText("Enable the app's background service to have the app automatically check for alerts in your area once a day and notify you of any new alerts")
-                                    .setPromptStateChangeListener(null)
+                                    .setPrimaryText(R.string.background_service_onboarding_primary)
+                                    .setSecondaryText(R.string.background_service_onboarding_secondary)
+                                    .setPromptStateChangeListener(new MaterialTapTargetPrompt.PromptStateChangeListener() {
+                                        @Override
+                                        public void onPromptStateChanged(@NonNull MaterialTapTargetPrompt prompt, int state) {
+                                            if(state == MaterialTapTargetPrompt.STATE_FOCAL_PRESSED || state == MaterialTapTargetPrompt.STATE_NON_FOCAL_PRESSED)
+                                            new MaterialTapTargetPrompt.Builder(MainActivity.this)
+                                                    .setTarget(R.id.enable_live_tracking_checkBox)
+                                                    .setPrimaryText(R.string.live_tracking_onboarding_primary)
+                                                    .setSecondaryText(R.string.live_tracking_onboarding_secondary)
+                                                    .setPromptFocal(new RectanglePromptFocal())
+                                                    .show();
+                                        }
+                                    })
                                     .setPromptFocal(new RectanglePromptFocal())
                                     .show();
                     }

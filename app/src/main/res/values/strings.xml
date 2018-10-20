@@ -21,4 +21,11 @@
     <string name="alert_title">Heatwave Alert!</string>
     <string name="alert_description_short">A heatwave is expected to occur in your area.</string>
     <string name="alert_description_long">A heatwave is expected to occur in your area today and the next few days. Please stay indoors, in a cool location to ensure your safety</string>
+    <string name="enable_live_tracking">Enable heart rate tracking</string>
+    <string name="check_button_onboarding_primary">Check for alerts</string>
+    <string name="check_button_onboarding_secondary">Press \"Check\" to quickly check for a heatwave alert in your area</string>
+    <string name="background_service_onboarding_primary">Enable background service</string>
+    <string name="background_service_onboarding_secondary">Enable the app\'s background service to have the app automatically check for alerts in your area once a day and notify you of any new alerts</string>
+    <string name="live_tracking_onboarding_primary">Enable live heart rate tracking</string>
+    <string name="live_tracking_onboarding_secondary">Enable this checkbox to allow the app to continuously monitor your heart rate and notify you any anomalies due to heat exhaustion</string>
 </resources>
