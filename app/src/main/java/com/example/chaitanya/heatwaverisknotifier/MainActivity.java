@@ -54,7 +54,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        Utils.createNotificationChannel(this);
         final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
         CheckBox enableServiceCheckbox = findViewById(R.id.enable_background_checkbox);
         mStatusUpdateService = new StatusUpdateService();

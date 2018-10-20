@@ -2,6 +2,8 @@ package com.example.chaitanya.heatwaverisknotifier;
 
 import android.Manifest;
 import android.app.IntentService;
+import android.app.Notification;
+import android.app.PendingIntent;
 import android.app.job.JobInfo;
 import android.app.job.JobParameters;
 import android.app.job.JobScheduler;
@@ -17,6 +19,8 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.DialogFragment;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.widget.TextView;
@@ -71,6 +75,21 @@ public class StatusUpdateService extends JobService {
         js.cancel(STATUS_UPDATE_SERIVICE_ID);
     }
 
+    private void sendAlerts(){
+        Log.i("HEATWAVE", "Sending Alerts");
+        Intent intent = new Intent(this, MainActivity.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, Utils.CHANNEL_ID)
+                .setSmallIcon(android.R.drawable.alert_light_frame)
+                .setContentTitle(getString(R.string.alert_title))
+                .setContentInfo(getString(R.string.alert_description_short))
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setStyle( new NotificationCompat.BigTextStyle().bigText(getString(R.string.alert_description_long)))
+                .setContentIntent(pendingIntent);
+
+        NotificationManagerCompat notificationManagerCompat = NotificationManagerCompat.from(this);
+        notificationManagerCompat.notify(0, builder.build());
+    }
     @Override
     public boolean onStartJob(final JobParameters jobParameters) {
         mFusedLocationCLient = LocationServices.getFusedLocationProviderClient(this);
@@ -78,14 +97,19 @@ public class StatusUpdateService extends JobService {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED)
             mFusedLocationCLient.getLastLocation().addOnSuccessListener(new OnSuccessListener<Location>() {
                 @Override
-                public void onSuccess(Location location) {
+                public void onSuccess(final Location location) {
                     currentLocation = location;
                     Utils.getResultsFromAppServer(getApplicationContext(), location, new ServerResultListener() {
                         @Override
                         public void onResult(boolean isHeatwave) {
                             mRisk = isHeatwave;
-                            Log.i("HEATWAVE", "Recieved result");
+                            Log.i("HEATWAVE", "Received result");
                             //TODO: If true send a notification
+                            if(isHeatwave) {
+                                Utils.sendLocationToAppServer(getApplicationContext(), location);
+                                sendAlerts();
+                            }
+
                             jobFinished(jobParameters, false);
                         }
 
@@ -103,23 +127,6 @@ public class StatusUpdateService extends JobService {
                             jobFinished(jobParameters, true);
                         }
                     });
-                    /*if(location == null){
-                        final LocationRequest locationRequest = new LocationRequest();
-                        locationRequest.setInterval(10000);
-                        locationRequest.setFastestInterval(5000);
-                        locationRequest.setPriority(LocationRequest.PRIORITY_LOW_POWER);
-
-                        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder().addLocationRequest(locationRequest);
-                        final SettingsClient client = LocationServices.getSettingsClient(getApplicationContext());
-                        Task<LocationSettingsResponse> task = client.checkLocationSettings(builder.build());
-
-                        task.addOnSuccessListener(new OnSuccessListener<LocationSettingsResponse>() {
-                            @Override
-                            public void onSuccess(LocationSettingsResponse locationSettingsResponse) {
-
-                            }
-                        });
-                    }*/
 
                 }
             });

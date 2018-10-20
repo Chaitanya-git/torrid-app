@@ -16,4 +16,9 @@
     <string name="safe_message">Looks like you\'re safe</string>
     <string name="unexpected_server_response_message">Unexpected result from server</string>
     <string name="network_error">Network error</string>
+    <string name="channel_name">Heatwave Alerts</string>
+    <string name="channel_description">Alerts given out by the app in case a heatwave is expected in your area in the next few days</string>
+    <string name="alert_title">Heatwave Alert!</string>
+    <string name="alert_description_short">A heatwave is expected to occur in your area.</string>
+    <string name="alert_description_long">A heatwave is expected to occur in your area today and the next few days. Please stay indoors, in a cool location to ensure your safety</string>
 </resources>
