@@ -92,10 +92,7 @@ public class StatusUpdateService extends JobService {
     }
     @Override
     public boolean onStartJob(final JobParameters jobParameters) {
-        mFusedLocationCLient = LocationServices.getFusedLocationProviderClient(this);
-        Log.i("HEATWAVE", "Starting job...");
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED)
-            mFusedLocationCLient.getLastLocation().addOnSuccessListener(new OnSuccessListener<Location>() {
+        new LocationProvider(this, null).requestLocation(new LocationProviderResultListener() {
                 @Override
                 public void onSuccess(final Location location) {
                     currentLocation = location;
@@ -129,8 +126,18 @@ public class StatusUpdateService extends JobService {
                     });
 
                 }
-            });
-            else jobFinished(jobParameters, false);
+
+            @Override
+            public void onPermissionDenied() {
+                jobFinished(jobParameters, false);
+            }
+
+            @Override
+            public void onFailure() {
+                jobFinished(jobParameters, true);
+            }
+        });
+
         return true;
     }
 

@@ -71,6 +71,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String PREFERENCE_ENABLE_BACKGROUND_SERVICE = "enable_background_service";
     private static final String PREFERENCE_COMPLETED_ONBOARDING = "completed_onboarding";
     private static final int GOOGLE_FIT_PERMISSIONS_REQUEST_CODE = 10;
+
     private OnDataPointListener mHeartRateListener = new OnDataPointListener() {
         @Override
         public void onDataPoint(DataPoint dataPoint) {
@@ -129,32 +130,28 @@ public class MainActivity extends AppCompatActivity {
 
                     }
                 };
-                if(ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
-                    if(ActivityCompat.shouldShowRequestPermissionRationale(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION)){
-                        new LocationRationaleDialogFragment().show(getSupportFragmentManager(), "location_access_request");
+                new LocationProvider(getApplicationContext(),MainActivity.this).requestLocation(new LocationProviderResultListener() {
+                    @Override
+                    public void onSuccess(Location location) {
+                        displayResultsFromServer(location);
                     }
-                    else{
-                        Utils.requestAccessFineLocation(MainActivity.this);
-                    }
-                }
-                else {
-                    try {
-                        assert locationManager != null;
-                        Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
 
-                        if (location == null || location.getTime() - Calendar.getInstance().getTimeInMillis() > MAX_LOCATION_AGE) {
-                            if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER))
-                                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 100, locationListener);
-                            else
-                                Utils.displayEnableGPSPrompt(MainActivity.this);
-                        } else
-                            displayResultsFromServer(location);
-
-                    } catch (NullPointerException e) {
-                        DialogFragment errorDialog = new LocationRequestErrorDialogFragment();
-                        errorDialog.show(getSupportFragmentManager(), "gps_location_request_error");
+                    @Override
+                    public void onPermissionDenied() {
+                        if(ActivityCompat.shouldShowRequestPermissionRationale(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION)){
+                            new LocationRationaleDialogFragment().show(getSupportFragmentManager(), "location_access_request");
+                        }
+                        else{
+                            Utils.requestAccessFineLocation(MainActivity.this);
+                        }
                     }
-                }
+
+                    @Override
+                    public void onFailure() {
+                        Log.i("HEATWAVE", "Failed getting location");
+                    }
+                });
+
             }
         });
 

@@ -2,12 +2,17 @@ package com.example.chaitanya.heatwaverisknotifier;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Context;
+import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
+import android.util.Log;
 
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.common.api.ResolvableApiException;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
@@ -15,20 +20,24 @@ import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResponse;
+import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.location.SettingsClient;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 
-public class LocationProvider {
+class LocationProvider {
+    private static final int RESOLVE_ERROR_REQUEST_CODE = 12;
     private FusedLocationProviderClient mFusedLocationCLient;
     private Context mContext;
+    private Activity mActivity;
     private LocationCallback mLocationCallback;
 
-    LocationProvider(Context context) {
+    LocationProvider(Context context, Activity activity) {
         mFusedLocationCLient = LocationServices.getFusedLocationProviderClient(context);
         mContext = context;
+        mActivity = activity;
     }
 
     void requestLocation(final LocationProviderResultListener listener) {
@@ -49,10 +58,10 @@ public class LocationProvider {
 
                         SettingsClient client = LocationServices.getSettingsClient(mContext);
                         Task<LocationSettingsResponse> response = client.checkLocationSettings(builder.build());
-                        response.addOnSuccessListener(new OnSuccessListener<LocationSettingsResponse>() {
+                        response.addOnCompleteListener(new OnCompleteListener<LocationSettingsResponse>() {
                             @SuppressLint("MissingPermission")
                             @Override
-                            public void onSuccess(LocationSettingsResponse locationSettingsResponse) {
+                            public void onComplete(@NonNull Task<LocationSettingsResponse> task) {
                                 mLocationCallback = new LocationCallback(){
                                     @Override
                                     public void onLocationResult(LocationResult locationResult){
@@ -63,16 +72,29 @@ public class LocationProvider {
                                         mFusedLocationCLient.removeLocationUpdates(mLocationCallback);
                                     }
                                 };
-                                if (locationSettingsResponse.getLocationSettingsStates().isLocationPresent())
+                                LocationSettingsResponse locationSettingsResponse = null;
+                                try {
+                                    locationSettingsResponse = task.getResult(ApiException.class);
+                                } catch (ApiException e) {
+                                    switch (e.getStatusCode()){
+                                        case LocationSettingsStatusCodes
+                                                .RESOLUTION_REQUIRED:
+                                            try {
+                                                ResolvableApiException resolvable = (ResolvableApiException) e;
+                                                Log.i("HEATWAVE", "mActivity" + mActivity);
+                                                if(mActivity != null)
+                                                    resolvable.startResolutionForResult(mActivity, RESOLVE_ERROR_REQUEST_CODE);
+                                            }
+                                            catch (IntentSender.SendIntentException intentException){
+                                                //Ignore
+                                            }
+
+                                    }
+                                }
+                                if (locationSettingsResponse != null && locationSettingsResponse.getLocationSettingsStates().isLocationPresent())
                                     mFusedLocationCLient.requestLocationUpdates(request, mLocationCallback, null);
                                 else
                                     listener.onFailure();
-                            }
-                        })
-                        .addOnFailureListener(new OnFailureListener() {
-                            @Override
-                            public void onFailure(@NonNull Exception e) {
-                                e.printStackTrace();
                             }
                         });
                     }
