@@ -14,6 +14,7 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.content.ContextCompat;
@@ -42,11 +43,16 @@ import org.w3c.dom.Text;
 import java.util.Calendar;
 import java.util.Set;
 
+import uk.co.samuelwall.materialtaptargetprompt.MaterialTapTargetPrompt;
+import uk.co.samuelwall.materialtaptargetprompt.MaterialTapTargetSequence;
+import uk.co.samuelwall.materialtaptargetprompt.extras.focals.RectanglePromptFocal;
+
 
 public class MainActivity extends AppCompatActivity {
 
     private static final long MAX_LOCATION_AGE = 100000;
     private static final String PREFERENCE_ENABLE_BACKGROUND_SERVICE = "enable_background_service";
+    private static final String PREFERENCE_COMPLETED_ONBOARDING = "completed_onboarding";
     StatusUpdateService mStatusUpdateService;
     Location currentLocation = null;
 
@@ -61,6 +67,12 @@ public class MainActivity extends AppCompatActivity {
         Button CheckButton = findViewById(R.id.check_button);
 
         enableServiceCheckbox.setChecked( preferences.getBoolean(PREFERENCE_ENABLE_BACKGROUND_SERVICE, false) );
+        if(!preferences.getBoolean(PREFERENCE_COMPLETED_ONBOARDING, false)){
+            showOnboarding();
+            SharedPreferences.Editor editor = preferences.edit();
+            editor.putBoolean(PREFERENCE_COMPLETED_ONBOARDING, true);
+            editor.apply();
+        }
         CheckButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -130,6 +142,28 @@ public class MainActivity extends AppCompatActivity {
                     mStatusUpdateService.cancelJob(getApplicationContext());
             }
         });
+    }
+
+    private void showOnboarding() {
+        new MaterialTapTargetPrompt.Builder(this)
+                .setTarget(R.id.check_button)
+                .setPrimaryText("Check for alerts")
+                .setSecondaryText("Press \"Check\" to quickly check for a heatwave alert in your area")
+                .setPromptStateChangeListener(new MaterialTapTargetPrompt.PromptStateChangeListener() {
+                    @Override
+                    public void onPromptStateChanged(@NonNull MaterialTapTargetPrompt prompt, int state) {
+                        if(state == MaterialTapTargetPrompt.STATE_FOCAL_PRESSED)
+                            new MaterialTapTargetPrompt.Builder(MainActivity.this)
+                                    .setTarget(R.id.enable_background_checkbox)
+                                    .setPrimaryText("Enable background service")
+                                    .setSecondaryText("Enable the app's background service to have the app automatically check for alerts in your area once a day and notify you of any new alerts")
+                                    .setPromptStateChangeListener(null)
+                                    .setPromptFocal(new RectanglePromptFocal())
+                                    .show();
+                    }
+                })
+                .setFocalRadius((float) 170.0)
+                .show();
     }
 
     void displayResultsFromServer(Location location){
