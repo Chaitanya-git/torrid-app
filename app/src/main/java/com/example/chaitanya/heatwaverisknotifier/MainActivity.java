@@ -99,6 +99,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 else{
                     try {
+                        assert locationManager != null;
                         Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
                         if( location == null || location.getTime() - Calendar.getInstance().getTimeInMillis() > MAX_LOCATION_AGE) {
                             if(locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER))
@@ -140,26 +141,26 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onResult(boolean isHeatwave) {
                 if(isHeatwave)
-                    riskView.setText("AT RISK!!");
+                    riskView.setText(R.string.at_risk_message);
                 else
-                    riskView.setText("Looks like you're safe");
+                    riskView.setText(R.string.safe_message);
             }
 
             @Override
             public void onResponseFormatError(JSONException e) {
-                riskView.setText("Unexpected result from server");
+                riskView.setText(R.string.unexpected_server_response_message);
             }
 
             @Override
             public void onVolleyError(VolleyError e) {
-                riskView.setText("Network error");
+                riskView.setText(R.string.network_error);
             }
         });
     }
 
     public void setCurrentLocation(Location location){
         TextView RiskView = findViewById(R.id.riskTextView);
-        RiskView.setText("At Risk!");
+        RiskView.setText(R.string.at_risk_message);
         currentLocation = location;
     }
 

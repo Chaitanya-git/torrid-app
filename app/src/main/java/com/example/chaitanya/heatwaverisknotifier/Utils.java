@@ -20,14 +20,14 @@ import com.android.volley.toolbox.Volley;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class Utils {
+class Utils {
     private static final int LOCATION_REQUEST_RESULT = 1;
 
-    public static void requestAccessFineLocation(Activity activity){
+    static void requestAccessFineLocation(Activity activity){
         ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_REQUEST_RESULT);
     }
 
-    public static void displayEnableGPSPrompt(
+    static void displayEnableGPSPrompt(
             final Activity activity)
     {
         final AlertDialog.Builder builder =
@@ -49,7 +49,7 @@ public class Utils {
                         });
         builder.create().show();
     }
-    public static void getResultsFromAppServer(Context context, Location location, final ServerResultListener listener){
+    static void getResultsFromAppServer(Context context, Location location, final ServerResultListener listener){
         RequestQueue queue = Volley.newRequestQueue(context);
         String serverUrl = "http://radiant-bastion-64391.herokuapp.com/";
         serverUrl = "http://192.168.0.110:3000/";
