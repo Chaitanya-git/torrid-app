@@ -60,12 +60,14 @@ public class StatusUpdateService extends JobService {
     }
     public void scheduleJob(Context context){
         Log.i("HEATWAVE",context.toString());
-        JobScheduler js = (JobScheduler) context.getSystemService(context.JOB_SCHEDULER_SERVICE);
+        JobScheduler js = (JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);
+        assert js != null;
         js.schedule(JOB_INFO);
     }
 
     public void cancelJob(Context context){
-        JobScheduler js = (JobScheduler) context.getSystemService(context.JOB_SCHEDULER_SERVICE);
+        JobScheduler js = (JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);
+        assert js != null;
         js.cancel(STATUS_UPDATE_SERIVICE_ID);
     }
 
@@ -84,18 +86,21 @@ public class StatusUpdateService extends JobService {
                             mRisk = isHeatwave;
                             Log.i("HEATWAVE", "Recieved result");
                             //TODO: If true send a notification
+                            jobFinished(jobParameters, false);
                         }
 
                         @Override
                         public void onResponseFormatError(JSONException e) {
                             Log.i("HEATWAVE", "Server response error");
                             mError = true;
+                            jobFinished(jobParameters, false);
                         }
 
                         @Override
                         public void onVolleyError(VolleyError e) {
                             Log.i("HEATWAVE", "Volley error");
                             mError = true;
+                            jobFinished(jobParameters, true);
                         }
                     });
                     /*if(location == null){
@@ -115,7 +120,7 @@ public class StatusUpdateService extends JobService {
                             }
                         });
                     }*/
-                    jobFinished(jobParameters, true);
+
                 }
             });
             else jobFinished(jobParameters, false);

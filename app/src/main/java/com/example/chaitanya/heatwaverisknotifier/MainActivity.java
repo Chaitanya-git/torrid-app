@@ -46,6 +46,7 @@ import java.util.Set;
 public class MainActivity extends AppCompatActivity {
 
     private static final long MAX_LOCATION_AGE = 100000;
+    private static final String PREFERENCE_ENABLE_BACKGROUND_SERVICE = "enable_background_service";
     StatusUpdateService mStatusUpdateService;
     Location currentLocation = null;
 
@@ -54,13 +55,12 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
-
-        //if(preferences.getBoolean());
+        final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        CheckBox enableServiceCheckbox = findViewById(R.id.enable_background_checkbox);
         mStatusUpdateService = new StatusUpdateService();
         Button CheckButton = findViewById(R.id.check_button);
-        final TextView riskView = findViewById(R.id.riskTextView);
 
+        enableServiceCheckbox.setChecked( preferences.getBoolean(PREFERENCE_ENABLE_BACKGROUND_SERVICE, false) );
         CheckButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -97,21 +97,19 @@ public class MainActivity extends AppCompatActivity {
                         Utils.requestAccessFineLocation(MainActivity.this);
                     }
                 }
-                else{
+                else {
                     try {
                         assert locationManager != null;
                         Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-                        if( location == null || location.getTime() - Calendar.getInstance().getTimeInMillis() > MAX_LOCATION_AGE) {
-                            if(locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER))
+                        if (location == null || location.getTime() - Calendar.getInstance().getTimeInMillis() > MAX_LOCATION_AGE) {
+                            if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER))
                                 locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 100, locationListener);
                             else
                                 Utils.displayEnableGPSPrompt(MainActivity.this);
-                        }
-                        else
+                        } else
                             displayResultsFromServer(location);
 
-                    }
-                    catch (NullPointerException e) {
+                    } catch (NullPointerException e) {
                         DialogFragment errorDialog = new LocationRequestErrorDialogFragment();
                         errorDialog.show(getSupportFragmentManager(), "gps_location_request_error");
                     }
@@ -119,18 +117,17 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        CheckBox enableServiceCheckbox = findViewById(R.id.enable_background_checkbox);
         enableServiceCheckbox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
-                if(isChecked){
-                    //Start background service
+                SharedPreferences.Editor editor = preferences.edit();
+                editor.putBoolean(PREFERENCE_ENABLE_BACKGROUND_SERVICE, isChecked);
+                editor.apply();
+
+                if(isChecked)
                     mStatusUpdateService.scheduleJob(getApplicationContext());
-                }
-                else{
-                    //Stop background service
+                else
                     mStatusUpdateService.cancelJob(getApplicationContext());
-                }
             }
         });
     }
