@@ -11,4 +11,5 @@
     <string name="ok">Ok</string>
     <string name="cancel">Cancel</string>
     <string name="gps_enable_user_request">Enable GPS location service to find current location.  Click OK to go to location services settings to let you do so.</string>
+    <string name="enable_background_service">Enable background service</string>
 </resources>

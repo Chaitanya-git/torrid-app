@@ -3,6 +3,9 @@ package com.example.chaitanya.heatwaverisknotifier;
 import android.Manifest;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.app.job.JobInfo;
+import android.app.job.JobService;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
@@ -18,6 +21,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.TextView;
 
 import com.android.volley.Request;
@@ -27,15 +32,21 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationSettingsRequest;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.w3c.dom.Text;
 
 import java.util.Calendar;
+import java.util.Set;
+
 
 public class MainActivity extends AppCompatActivity {
 
     private static final long MAX_LOCATION_AGE = 100000;
+    StatusUpdateService mStatusUpdateService;
     Location currentLocation = null;
 
     @Override
@@ -46,8 +57,9 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
 
         //if(preferences.getBoolean());
-
+        mStatusUpdateService = new StatusUpdateService();
         Button CheckButton = findViewById(R.id.check_button);
+        final TextView riskView = findViewById(R.id.riskTextView);
 
         CheckButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -59,7 +71,7 @@ public class MainActivity extends AppCompatActivity {
                     public void onLocationChanged(Location location) {
 
                         System.out.println(location);
-                        getResultsFromAppServer(location);
+                        displayResultsFromServer(location);
                     }
 
                     @Override
@@ -95,7 +107,8 @@ public class MainActivity extends AppCompatActivity {
                                 Utils.displayEnableGPSPrompt(MainActivity.this);
                         }
                         else
-                            getResultsFromAppServer(location);
+                            displayResultsFromServer(location);
+
                     }
                     catch (NullPointerException e) {
                         DialogFragment errorDialog = new LocationRequestErrorDialogFragment();
@@ -104,44 +117,60 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+
+        CheckBox enableServiceCheckbox = findViewById(R.id.enable_background_checkbox);
+        enableServiceCheckbox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
+                if(isChecked){
+                    //Start background service
+                    mStatusUpdateService.scheduleJob(getApplicationContext());
+                }
+                else{
+                    //Stop background service
+                    mStatusUpdateService.cancelJob(getApplicationContext());
+                }
+            }
+        });
     }
 
-    public void getResultsFromAppServer(Location location){
-        RequestQueue queue = Volley.newRequestQueue(this);
-        String serverUrl = "http://radiant-bastion-64391.herokuapp.com/";
-        serverUrl = "http://192.168.0.110:3000/";
-        String endpointUrl = serverUrl+"heatwave?"+"lat="+location.getLatitude()+"&lon="+location.getLongitude();
-        final TextView RiskView = findViewById(R.id.riskTextView);
-        System.out.println(endpointUrl);
-        JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, endpointUrl, null,
-                new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        try{
-                            if(response.get("HEAT_WAVE_STATUS") == "TRUE")
-                                RiskView.setText("AT RISK!");
-                            else
-                                RiskView.setText("Looks like you're safe");
-                            System.out.println("Server response: " + response);
-                        }catch (JSONException e) {
-                            RiskView.setText("Didn't get expected response from server.");
-                            e.printStackTrace();
-                        }
-                    }
-                },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        RiskView.setText("Server error!");
-                        System.out.println("Server response error:" + error);
-                    }
-                });
-        queue.add(request);
+    void displayResultsFromServer(Location location){
+        final TextView riskView = findViewById(R.id.riskTextView);
+        Utils.getResultsFromAppServer(this, location, new ServerResultListener() {
+            @Override
+            public void onResult(boolean isHeatwave) {
+                if(isHeatwave)
+                    riskView.setText("AT RISK!!");
+                else
+                    riskView.setText("Looks like you're safe");
+            }
+
+            @Override
+            public void onResponseFormatError(JSONException e) {
+                riskView.setText("Unexpected result from server");
+            }
+
+            @Override
+            public void onVolleyError(VolleyError e) {
+                riskView.setText("Network error");
+            }
+        });
     }
+
     public void setCurrentLocation(Location location){
         TextView RiskView = findViewById(R.id.riskTextView);
         RiskView.setText("At Risk!");
         currentLocation = location;
+    }
+
+    public void createLocationRequest(){
+        LocationRequest locationRequest = new LocationRequest();
+        locationRequest.setInterval(1000 * 24 * 60 * 60);
+        locationRequest.setFastestInterval(5000);
+        locationRequest.setPriority(LocationRequest.PRIORITY_LOW_POWER);
+
+        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder().addLocationRequest(locationRequest);
+        //SettingsClient
     }
 
 }
