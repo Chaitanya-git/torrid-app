@@ -141,6 +141,7 @@ public class MainActivity extends AppCompatActivity {
                     try {
                         assert locationManager != null;
                         Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+
                         if (location == null || location.getTime() - Calendar.getInstance().getTimeInMillis() > MAX_LOCATION_AGE) {
                             if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER))
                                 locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 100, locationListener);
@@ -212,6 +213,7 @@ public class MainActivity extends AppCompatActivity {
                 .build();
         return GoogleSignIn.getAccountForExtension(getApplicationContext(), fitnessOptions);
     }
+
     private void startLiveTracking(){
         mSensorsClient = Fitness.getSensorsClient(getApplicationContext(), getSignedInAccount());
         mSensorsClient.add(new SensorRequest.Builder()
