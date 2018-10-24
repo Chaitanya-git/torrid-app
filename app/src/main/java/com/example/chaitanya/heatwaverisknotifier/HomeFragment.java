@@ -53,17 +53,12 @@ public class HomeFragment extends Fragment{
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getView().getContext());
-        CheckBox enableServiceCheckbox = getView().findViewById(R.id.enable_background_checkbox);
-        CheckBox enableLiveTrackingCheckbox = getView().findViewById(R.id.enable_live_tracking_checkBox);
 
-        mStatusUpdateService = new StatusUpdateService();
-        mLiveTrackingServiceIntent = new Intent(getView().getContext(), LiveTrackingService.class);
 
         Button checkButton = getView().findViewById(R.id.check_button);
 
-        enableServiceCheckbox.setChecked( preferences.getBoolean(PREFERENCE_ENABLE_BACKGROUND_SERVICE, false) );
         if(!preferences.getBoolean(PREFERENCE_COMPLETED_ONBOARDING, false)){
-            showOnboarding();
+            //showOnboarding();
             SharedPreferences.Editor editor = preferences.edit();
             editor.putBoolean(PREFERENCE_COMPLETED_ONBOARDING, true);
             editor.apply();
@@ -99,80 +94,13 @@ public class HomeFragment extends Fragment{
             }
         });
 
-        enableServiceCheckbox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
-                SharedPreferences.Editor editor = preferences.edit();
-                editor.putBoolean(PREFERENCE_ENABLE_BACKGROUND_SERVICE, isChecked);
-                editor.apply();
 
-                if(isChecked)
-                    mStatusUpdateService.scheduleJob(getActivity().getApplicationContext());
-                else
-                    mStatusUpdateService.cancelJob(getActivity().getApplicationContext());
-            }
-        });
-
-        enableLiveTrackingCheckbox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
-                if(isChecked) {
-                    Log.i("HEATWAVE", "Starting live tracking...");
-                    FitnessOptions fitnessOptions = FitnessOptions.builder()
-                            .addDataType(DataType.TYPE_HEART_RATE_BPM, FitnessOptions.ACCESS_READ)
-                            .build();
-                    if(!GoogleSignIn.hasPermissions(GoogleSignIn.getLastSignedInAccount(getActivity().getApplicationContext()), fitnessOptions)){
-                        //compoundButton.setChecked(false);
-                        GoogleSignIn.requestPermissions(
-                                getActivity(),
-                                GOOGLE_FIT_PERMISSIONS_REQUEST_CODE,
-                                GoogleSignIn.getLastSignedInAccount(getActivity().getApplicationContext()),
-                                fitnessOptions);
-                    }
-                    else {
-                        startLiveTrackingService();
-                    }
-                }
-                else stopLiveTrackingService();
-            }
-        });
 
     }
 
-    private void startLiveTrackingService(){
-        getActivity().startService(mLiveTrackingServiceIntent);
-    }
 
-    private void stopLiveTrackingService(){
 
-        Fitness.getRecordingClient(getActivity(), GoogleSignIn.getLastSignedInAccount(getActivity().getBaseContext()))
-                .unsubscribe(DataType.TYPE_HEART_RATE_BPM)
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void aVoid) {
-                        Log.i(TAG, "Successfully unsubscribed for data type: " );
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        // Subscription not removed
-                        Log.i(TAG, "Failed to unsubscribe for data type: ");
-                    }
-                });
-
-        getActivity().stopService(mLiveTrackingServiceIntent);
-    }
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent Data){
-        if(resultCode == Activity.RESULT_OK){
-            if(requestCode == GOOGLE_FIT_PERMISSIONS_REQUEST_CODE){
-                startLiveTrackingService();
-            }
-        }
-    }
-
-    private void showOnboarding() {
+    /*private void showOnboarding() {
         new MaterialTapTargetPrompt.Builder(this)
                 .setTarget(R.id.check_button)
                 .setPrimaryText(R.string.check_button_onboarding_primary)
@@ -204,7 +132,7 @@ public class HomeFragment extends Fragment{
                 .setFocalRadius((float) 170.0)
                 .show();
     }
-
+    */
     void displayResultsFromServer(Location location){
         final TextView riskView = getView().findViewById(R.id.riskTextView);
         Utils.getResultsFromAppServer(getContext(), location, new ServerResultListener() {
