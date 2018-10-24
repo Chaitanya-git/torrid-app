@@ -28,4 +28,8 @@
     <string name="background_service_onboarding_secondary">Enable the app\'s background service to have the app automatically check for alerts in your area once a day and notify you of any new alerts</string>
     <string name="live_tracking_onboarding_primary">Enable live heart rate tracking</string>
     <string name="live_tracking_onboarding_secondary">Enable this checkbox to allow the app to continuously monitor your heart rate and notify you any anomalies due to heat exhaustion</string>
+    <string name="home">Home</string>
+    <string name="profile">Profile</string>
+    <string name="services">Services</string>
+    <string name="torrid">Torrid</string>
 </resources>
