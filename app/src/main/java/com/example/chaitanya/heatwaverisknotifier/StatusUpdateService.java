@@ -80,7 +80,7 @@ public class StatusUpdateService extends JobService {
         Intent intent = new Intent(this, MainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, Utils.CHANNEL_ID)
-                .setSmallIcon(android.R.drawable.alert_light_frame)
+                .setSmallIcon(android.R.drawable.ic_dialog_alert)
                 .setContentTitle(getString(R.string.alert_title))
                 .setContentInfo(getString(R.string.alert_description_short))
                 .setPriority(NotificationCompat.PRIORITY_HIGH)

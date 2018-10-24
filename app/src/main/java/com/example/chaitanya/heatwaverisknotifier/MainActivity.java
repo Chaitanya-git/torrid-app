@@ -12,6 +12,8 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.hardware.Sensor;
+import android.hardware.SensorManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -20,6 +22,7 @@ import android.renderscript.Element;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.DialogFragment;
+import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -40,23 +43,36 @@ import com.android.volley.toolbox.Volley;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptionsExtension;
+import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.fitness.Fitness;
 import com.google.android.gms.fitness.FitnessOptions;
 import com.google.android.gms.fitness.SensorsClient;
+import com.google.android.gms.fitness.data.BleDevice;
 import com.google.android.gms.fitness.data.DataPoint;
+import com.google.android.gms.fitness.data.DataSet;
+import com.google.android.gms.fitness.data.DataSource;
 import com.google.android.gms.fitness.data.DataType;
+import com.google.android.gms.fitness.request.BleScanCallback;
+import com.google.android.gms.fitness.request.DataReadRequest;
+import com.google.android.gms.fitness.request.DataSourcesRequest;
 import com.google.android.gms.fitness.request.OnDataPointListener;
 import com.google.android.gms.fitness.request.SensorRequest;
+import com.google.android.gms.fitness.result.DataReadResponse;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.w3c.dom.Text;
 
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -64,23 +80,17 @@ import uk.co.samuelwall.materialtaptargetprompt.MaterialTapTargetPrompt;
 import uk.co.samuelwall.materialtaptargetprompt.MaterialTapTargetSequence;
 import uk.co.samuelwall.materialtaptargetprompt.extras.focals.RectanglePromptFocal;
 
+import static java.text.DateFormat.getDateInstance;
+
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final long MAX_LOCATION_AGE = 100000;
     private static final String PREFERENCE_ENABLE_BACKGROUND_SERVICE = "enable_background_service";
     private static final String PREFERENCE_COMPLETED_ONBOARDING = "completed_onboarding";
     private static final int GOOGLE_FIT_PERMISSIONS_REQUEST_CODE = 10;
-
-    private OnDataPointListener mHeartRateListener = new OnDataPointListener() {
-        @Override
-        public void onDataPoint(DataPoint dataPoint) {
-            Log.i("HEATWAVE", "Got data point" + dataPoint);
-        }
-    };
-    private SensorsClient mSensorsClient = null;
+    private Intent mLiveTrackingServiceIntent = null;
+    private static final String TAG = "torrid";
     StatusUpdateService mStatusUpdateService;
-    Location currentLocation = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -92,6 +102,7 @@ public class MainActivity extends AppCompatActivity {
         CheckBox enableLiveTrackingCheckbox = findViewById(R.id.enable_live_tracking_checkBox);
 
         mStatusUpdateService = new StatusUpdateService();
+        mLiveTrackingServiceIntent = new Intent(this, LiveTrackingService.class);
 
         Button checkButton = findViewById(R.id.check_button);
 
@@ -106,30 +117,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
 
-                LocationManager locationManager = (LocationManager) getApplication().getSystemService(Context.LOCATION_SERVICE);
-                LocationListener locationListener = new LocationListener() {
-                    @Override
-                    public void onLocationChanged(Location location) {
-
-                        System.out.println(location);
-                        displayResultsFromServer(location);
-                    }
-
-                    @Override
-                    public void onStatusChanged(String s, int i, Bundle bundle) {
-
-                    }
-
-                    @Override
-                    public void onProviderEnabled(String s) {
-
-                    }
-
-                    @Override
-                    public void onProviderDisabled(String s) {
-
-                    }
-                };
                 new LocationProvider(getApplicationContext(),MainActivity.this).requestLocation(new LocationProviderResultListener() {
                     @Override
                     public void onSuccess(Location location) {
@@ -175,7 +162,7 @@ public class MainActivity extends AppCompatActivity {
                 if(isChecked) {
                     Log.i("HEATWAVE", "Starting live tracking...");
                     FitnessOptions fitnessOptions = FitnessOptions.builder()
-                            .addDataType(DataType.TYPE_STEP_COUNT_DELTA, FitnessOptions.ACCESS_READ)
+                            .addDataType(DataType.TYPE_HEART_RATE_BPM, FitnessOptions.ACCESS_READ)
                             .build();
                     if(!GoogleSignIn.hasPermissions(GoogleSignIn.getLastSignedInAccount(getApplicationContext()), fitnessOptions)){
                         //compoundButton.setChecked(false);
@@ -186,53 +173,46 @@ public class MainActivity extends AppCompatActivity {
                                 fitnessOptions);
                     }
                     else {
-                        startLiveTracking();
+                        startLiveTrackingService();
                     }
                 }
-                else
-                    stopLiveTracking();
+                else stopLiveTrackingService();
             }
         });
+
     }
 
+    private void startLiveTrackingService(){
+        startService(mLiveTrackingServiceIntent);
+    }
+
+    private void stopLiveTrackingService(){
+
+        Fitness.getRecordingClient(this, GoogleSignIn.getLastSignedInAccount(this))
+                .unsubscribe(DataType.TYPE_HEART_RATE_BPM)
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        Log.i(TAG, "Successfully unsubscribed for data type: " );
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        // Subscription not removed
+                        Log.i(TAG, "Failed to unsubscribe for data type: ");
+                    }
+                });
+
+        stopService(mLiveTrackingServiceIntent);
+    }
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent Data){
         if(resultCode == Activity.RESULT_OK){
             if(requestCode == GOOGLE_FIT_PERMISSIONS_REQUEST_CODE){
-                startLiveTracking();
+                startLiveTrackingService();
             }
         }
-    }
-
-    private GoogleSignInAccount getSignedInAccount(){
-        FitnessOptions fitnessOptions = FitnessOptions.builder()
-                .addDataType(DataType.TYPE_STEP_COUNT_DELTA, FitnessOptions.ACCESS_READ)
-                .build();
-        return GoogleSignIn.getAccountForExtension(getApplicationContext(), fitnessOptions);
-    }
-
-    private void startLiveTracking(){
-        mSensorsClient = Fitness.getSensorsClient(getApplicationContext(), getSignedInAccount());
-        mSensorsClient.add(new SensorRequest.Builder()
-                                .setDataType(DataType.TYPE_STEP_COUNT_DELTA)
-                                .setSamplingRate(1, TimeUnit.SECONDS)
-                                .build(),
-                        mHeartRateListener
-                );
-    }
-
-    private void stopLiveTracking(){
-        //Fitness.getSensorsClient(getApplicationContext(), GoogleSignIn.getLastSignedInAccount(getApplicationContext()))
-        mSensorsClient.remove(mHeartRateListener)
-                .addOnCompleteListener(new OnCompleteListener<Boolean>() {
-                    @Override
-                    public void onComplete(@NonNull Task<Boolean> task) {
-                        if(task.isSuccessful() && task.getResult())
-                            Log.i("HEATWAVE", "Stopped live tracking.");
-                        else
-                            Log.i("HEATWAVE", "Unable to stop live tracking.");
-                    }
-                });
     }
 
     private void showOnboarding() {
@@ -290,21 +270,4 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
-
-    public void setCurrentLocation(Location location){
-        TextView RiskView = findViewById(R.id.riskTextView);
-        RiskView.setText(R.string.at_risk_message);
-        currentLocation = location;
-    }
-
-    public void createLocationRequest(){
-        LocationRequest locationRequest = new LocationRequest();
-        locationRequest.setInterval(1000 * 24 * 60 * 60);
-        locationRequest.setFastestInterval(5000);
-        locationRequest.setPriority(LocationRequest.PRIORITY_LOW_POWER);
-
-        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder().addLocationRequest(locationRequest);
-        //SettingsClient
-    }
-
 }
