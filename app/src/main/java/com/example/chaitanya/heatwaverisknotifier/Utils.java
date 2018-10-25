@@ -27,7 +27,7 @@ import org.json.JSONObject;
 class Utils {
     private static final int LOCATION_REQUEST_RESULT = 1;
     static final String CHANNEL_ID = "HeatwaveAlerts";
-    static String serverUrl = "http://192.168.0.110:3000/";
+    static String serverUrl = "http://torrid.southindia.cloudapp.azure.com/";
     static void requestAccessFineLocation(Activity activity){
         ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_REQUEST_RESULT);
     }

@@ -42,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
                                 mCurrentFragment = new HomeFragment();
                                 break;
                             case R.id.profile:
-                                mCurrentFragment = null;
+                                mCurrentFragment = new ProfileFragment();
                                 break;
                             case R.id.services:
                                 mCurrentFragment = new ServicesFragment();

@@ -2,14 +2,15 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/home"
-        android:icon="@drawable/ic_launcher_background"
+        android:contentDescription=""
+        android:icon="@drawable/ic_home"
         android:title="@string/home" />
     <item
         android:id="@+id/profile"
-        android:icon="@drawable/ic_launcher_background"
+        android:icon="@drawable/ic_account_circle"
         android:title="@string/profile" />
     <item
         android:id="@+id/services"
-        android:icon="@drawable/ic_launcher_background"
+        android:icon="@drawable/ic_settings"
         android:title="@string/services" />
 </menu>

@@ -33,4 +33,8 @@
     <string name="services">Services</string>
     <string name="torrid">Torrid</string>
     <string name="torrid_services">Torrid Services</string>
+    <string name="torrid_profile">Torrid Profile</string>
+    <string name="name">Name</string>
+    <string name="mobile_number">Mobile number</string>
+    <string name="update">Update</string>
 </resources>
