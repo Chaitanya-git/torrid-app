@@ -4,15 +4,20 @@ import android.Manifest;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
+import android.preference.Preference;
+import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.design.widget.TextInputEditText;
+import android.support.design.widget.TextInputLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
@@ -20,7 +25,18 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageButton;
+
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -42,6 +58,7 @@ public class ProfileFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState){
         ImageButton profilePic = getActivity().findViewById(R.id.profileImageButton);
+        Button updateButton = getActivity().findViewById(R.id.update_button);
         profilePic.setBackground(null);
         loadProfilePic();
         profilePic.setOnClickListener(new View.OnClickListener() {
@@ -55,6 +72,44 @@ public class ProfileFragment extends Fragment {
                 }
             }
         });
+
+        updateButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                TextInputLayout nameField = getActivity().findViewById(R.id.name_input_field);
+                String name = nameField.getEditText().getText().toString();
+                TextInputEditText phoneField = getActivity().findViewById(R.id.contact_input_layout);
+                String phoneNumber = phoneField.getText().toString();
+
+                RequestQueue queue = Volley.newRequestQueue(getActivity().getBaseContext());
+                String endpointUrl = Utils.serverUrl+"users";
+                JSONObject userRegJson = new JSONObject();
+                try {
+                    SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext());
+                    userRegJson.put("userid", preferences.getString("userid", ""));
+                    userRegJson.put("name", name);
+                    userRegJson.put("num", phoneNumber);
+                } catch (JSONException e) {
+                    Log.i("HEATWAVE", e.getLocalizedMessage());
+                    e.printStackTrace();
+                }
+                JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, endpointUrl, userRegJson,
+                        new Response.Listener<JSONObject>() {
+                            @Override
+                            public void onResponse(JSONObject response) {
+                                Log.i("HEATWAVE", "Sent user details to server");
+                            }
+                        },
+                        new Response.ErrorListener() {
+                            @Override
+                            public void onErrorResponse(VolleyError error) {
+                                Log.i("HEATWAVE", "Error:"+error.getMessage());
+                            }
+                        }
+                );
+                queue.add(request);
+            }
+        });
     }
 
     @Override
@@ -63,6 +118,7 @@ public class ProfileFragment extends Fragment {
         if(resultCode == RESULT_OK){
             if (requestCode == RESULT_PICK_IMAGE && null != data) {
                 Uri selectedImage = data.getData();
+                if(selectedImage == null) return;
                 String[] filePathColumn = { MediaStore.Images.Media.DATA };
 
                 Cursor cursor = getContext().getContentResolver().query(selectedImage,
@@ -102,7 +158,7 @@ public class ProfileFragment extends Fragment {
         }
         File mypath = new File(directory, "thumbnail.png");
 
-        FileOutputStream fos = null;
+        FileOutputStream fos;
         try {
             fos = new FileOutputStream(mypath);
             proPicBitmap.compress(Bitmap.CompressFormat.PNG, 100, fos);

@@ -1,6 +1,8 @@
 package com.example.chaitanya.heatwaverisknotifier;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.Fragment;
@@ -11,10 +13,12 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.MenuItem;
 
+import com.google.firebase.messaging.FirebaseMessaging;
 
 
 public class MainActivity extends AppCompatActivity {
 
+    private static final String USER_ID = "userid";
     private Fragment mCurrentFragment = null;
 
     @Override
@@ -22,13 +26,18 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Utils.createNotificationChannel(this);
-
+        FirebaseMessaging.getInstance().setAutoInitEnabled(true);
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         final FragmentManager fragmentManager = getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         HomeFragment homeFragment = new HomeFragment();
         mCurrentFragment = homeFragment;
         fragmentTransaction.add(R.id.fragment_frame, homeFragment);
         fragmentTransaction.commit();
+
+        /*if(!preferences.getBoolean(USER_ID, false)){
+
+        }*/
 
         BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
         bottomNav.setOnNavigationItemSelectedListener(

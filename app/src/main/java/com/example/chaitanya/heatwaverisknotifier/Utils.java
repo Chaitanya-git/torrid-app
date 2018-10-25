@@ -27,33 +27,11 @@ import org.json.JSONObject;
 class Utils {
     private static final int LOCATION_REQUEST_RESULT = 1;
     static final String CHANNEL_ID = "HeatwaveAlerts";
-    static String serverUrl = "http://torrid.southindia.cloudapp.azure.com/";
+    static String serverUrl = "http://torrid.southindia.cloudapp.azure.com:8080/";
     static void requestAccessFineLocation(Activity activity){
         ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_REQUEST_RESULT);
     }
 
-    static void displayEnableGPSPrompt(
-            final Activity activity)
-    {
-        final AlertDialog.Builder builder =
-                new AlertDialog.Builder(activity);
-
-        builder.setMessage(R.string.gps_enable_user_request)
-                .setPositiveButton(R.string.ok,
-                        new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface d, int id) {
-                                activity.startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
-                                d.dismiss();
-                            }
-                        })
-                .setNegativeButton(R.string.cancel,
-                        new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface d, int id) {
-                                d.cancel();
-                            }
-                        });
-        builder.create().show();
-    }
     static void sendLocationToAppServer(Context context, Location location){
         Log.i("HEATWAVE","Sending location back to server...");
         RequestQueue queue = Volley.newRequestQueue(context);

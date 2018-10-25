@@ -1,7 +1,10 @@
 package com.example.chaitanya.heatwaverisknotifier;
 
 import android.app.Notification;
+import android.content.SharedPreferences;
 import android.location.Location;
+import android.preference.Preference;
+import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
 import android.util.Log;
@@ -20,6 +23,8 @@ import org.json.JSONObject;
 
 public class PushNotificationService extends FirebaseMessagingService {
     private static final int PUSH_NOTIFICATION_ID = 2;
+    private String USER_ID_PREF = "userid";
+
     @Override
     public void onNewToken(String token){
         registerUserWithServer(token);
@@ -48,8 +53,6 @@ public class PushNotificationService extends FirebaseMessagingService {
                 String endpointUrl = Utils.serverUrl+"users";
                 JSONObject userRegJson = new JSONObject();
                 try {
-                    userRegJson.put("lat", location.getLatitude());
-                    userRegJson.put("lon", location.getLongitude());
                     userRegJson.put("userid", token);
                 } catch (JSONException e) {
                     Log.i("HEATWAVE", e.getLocalizedMessage());
@@ -59,6 +62,14 @@ public class PushNotificationService extends FirebaseMessagingService {
                         new Response.Listener<JSONObject>() {
                             @Override
                             public void onResponse(JSONObject response) {
+                                try{
+                                    SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+                                    SharedPreferences.Editor editor = preferences.edit();
+                                    editor.putString(USER_ID_PREF, response.getString("userid"));
+                                }
+                                catch (JSONException e){
+                                    e.printStackTrace();
+                                }
                                 Log.i("HEATWAVE", "Sent location to server");
                             }
                         },
