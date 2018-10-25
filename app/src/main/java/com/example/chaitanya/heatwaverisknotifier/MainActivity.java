@@ -1,5 +1,6 @@
 package com.example.chaitanya.heatwaverisknotifier;
 
+import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.Fragment;
@@ -36,7 +37,6 @@ public class MainActivity extends AppCompatActivity {
                     public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
                         Log.i("TORRID_NAV", "Navigating...");
                         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-                        fragmentTransaction.remove(mCurrentFragment);
                         switch (menuItem.getItemId()){
                             case R.id.home:
                                 mCurrentFragment = new HomeFragment();
@@ -48,13 +48,18 @@ public class MainActivity extends AppCompatActivity {
                                 mCurrentFragment = new ServicesFragment();
                                 break;
                         }
-                        fragmentTransaction.add(R.id.fragment_frame, mCurrentFragment);
+                        fragmentTransaction.replace(R.id.fragment_frame, mCurrentFragment);
                         fragmentTransaction.commit();
                         return true;
                     }
                 }
         );
 
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data){
+        super.onActivityResult(requestCode,resultCode,data);
     }
 
 }

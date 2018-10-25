@@ -91,6 +91,7 @@ public class ServicesFragment extends Fragment {
                                 GOOGLE_FIT_PERMISSIONS_REQUEST_CODE,
                                 GoogleSignIn.getLastSignedInAccount(getActivity().getApplicationContext()),
                                 fitnessOptions);
+                        compoundButton.setChecked(false);
                     }
                     else {
                         startLiveTrackingService();
