@@ -14,6 +14,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
+import android.widget.Switch;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.fitness.Fitness;
@@ -24,6 +25,7 @@ import com.google.android.gms.tasks.OnSuccessListener;
 
 public class ServicesFragment extends Fragment {
     private static final String PREFERENCE_ENABLE_BACKGROUND_SERVICE = "enable_background_service";
+    private static final String PREFERENCE_ENABLE_LIVE_TRACKING = "enable_live_tracking";
     private static final String PREFERENCE_COMPLETED_ONBOARDING = "completed_onboarding";
     private static final int GOOGLE_FIT_PERMISSIONS_REQUEST_CODE = 10;
     private Intent mLiveTrackingServiceIntent = null;
@@ -41,14 +43,14 @@ public class ServicesFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState){
         final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getView().getContext());
-        CheckBox enableServiceCheckbox = getView().findViewById(R.id.enable_background_checkbox);
-        CheckBox enableLiveTrackingCheckbox = getView().findViewById(R.id.enable_live_tracking_checkBox);
+        Switch enableServiceSwitch = getView().findViewById(R.id.enable_background_checkbox);
+        Switch enableLiveTrackingSwitch = getView().findViewById(R.id.enable_live_tracking_checkBox);
 
         mStatusUpdateService = new StatusUpdateService();
         mLiveTrackingServiceIntent = new Intent(getView().getContext(), LiveTrackingService.class);
-        enableServiceCheckbox.setChecked( preferences.getBoolean(PREFERENCE_ENABLE_BACKGROUND_SERVICE, false) );
+        enableServiceSwitch.setChecked( preferences.getBoolean(PREFERENCE_ENABLE_BACKGROUND_SERVICE, false) );
 
-        enableServiceCheckbox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        enableServiceSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
                 SharedPreferences.Editor editor = preferences.edit();
@@ -62,9 +64,12 @@ public class ServicesFragment extends Fragment {
             }
         });
 
-        enableLiveTrackingCheckbox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        enableLiveTrackingSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
+                SharedPreferences.Editor editor = preferences.edit();
+                editor.putBoolean(PREFERENCE_ENABLE_LIVE_TRACKING, isChecked);
+                editor.apply();
                 if(isChecked) {
                     Log.i("HEATWAVE", "Starting live tracking...");
                     FitnessOptions fitnessOptions = FitnessOptions.builder()
@@ -86,6 +91,8 @@ public class ServicesFragment extends Fragment {
 
             }
         });
+        enableLiveTrackingSwitch.setChecked(preferences.getBoolean(PREFERENCE_ENABLE_LIVE_TRACKING, false));
+
     }
 
     private void startLiveTrackingService(){
@@ -120,4 +127,5 @@ public class ServicesFragment extends Fragment {
             }
         }
     }
+
 }

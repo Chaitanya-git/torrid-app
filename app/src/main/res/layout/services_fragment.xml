@@ -22,35 +22,31 @@
             app:titleTextAppearance="@style/AppTheme"
             app:titleTextColor="@color/common_google_signin_btn_text_dark_default" />
 
-        <CheckBox
+        <Switch
             android:id="@+id/enable_background_checkbox"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="0dp"
+            android:layout_height="35dp"
             android:layout_marginStart="8dp"
             android:layout_marginTop="8dp"
             android:layout_marginEnd="8dp"
-            android:layout_marginBottom="116dp"
             android:text="@string/enable_background_service"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.047"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/toolbar"
-            app:layout_constraintVertical_bias="0.244" />
+            app:layout_constraintTop_toBottomOf="@+id/toolbar" />
 
-        <CheckBox
+        <Switch
             android:id="@+id/enable_live_tracking_checkBox"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="0dp"
+            android:layout_height="33dp"
             android:layout_marginStart="8dp"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="4dp"
             android:layout_marginEnd="8dp"
-            android:layout_marginBottom="8dp"
             android:text="@string/enable_live_tracking"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.045"
+            app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/enable_background_checkbox"
-            app:layout_constraintVertical_bias="0.012" />
+            app:layout_constraintTop_toBottomOf="@+id/enable_background_checkbox" />
 
     </android.support.constraint.ConstraintLayout>
 </android.support.constraint.ConstraintLayout>
