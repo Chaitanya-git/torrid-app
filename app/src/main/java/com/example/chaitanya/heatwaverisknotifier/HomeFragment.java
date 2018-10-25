@@ -36,7 +36,7 @@ import uk.co.samuelwall.materialtaptargetprompt.extras.focals.RectanglePromptFoc
 
 public class HomeFragment extends Fragment{
     private static final String PREFERENCE_ENABLE_BACKGROUND_SERVICE = "enable_background_service";
-    private static final String PREFERENCE_COMPLETED_ONBOARDING = "completed_onboarding";
+    private static final String PREFERENCE_COMPLETED_ONBOARDING = "completed_home_onboarding";
     private static final int GOOGLE_FIT_PERMISSIONS_REQUEST_CODE = 10;
     private Intent mLiveTrackingServiceIntent = null;
     private static final String TAG = "torrid";
@@ -56,7 +56,7 @@ public class HomeFragment extends Fragment{
         Button checkButton = getView().findViewById(R.id.check_button);
 
         if(!preferences.getBoolean(PREFERENCE_COMPLETED_ONBOARDING, false)){
-            //showOnboarding();
+            showOnboarding();
             SharedPreferences.Editor editor = preferences.edit();
             editor.putBoolean(PREFERENCE_COMPLETED_ONBOARDING, true);
             editor.apply();
@@ -98,39 +98,15 @@ public class HomeFragment extends Fragment{
 
 
 
-    /*private void showOnboarding() {
+    private void showOnboarding() {
         new MaterialTapTargetPrompt.Builder(this)
                 .setTarget(R.id.check_button)
                 .setPrimaryText(R.string.check_button_onboarding_primary)
                 .setSecondaryText(R.string.check_button_onboarding_secondary)
-                .setPromptStateChangeListener(new MaterialTapTargetPrompt.PromptStateChangeListener() {
-                    @Override
-                    public void onPromptStateChanged(@NonNull MaterialTapTargetPrompt prompt, int state) {
-                        if(state == MaterialTapTargetPrompt.STATE_FOCAL_PRESSED || state == MaterialTapTargetPrompt.STATE_NON_FOCAL_PRESSED)
-                            new MaterialTapTargetPrompt.Builder(getActivity())
-                                    .setTarget(R.id.enable_background_checkbox)
-                                    .setPrimaryText(R.string.background_service_onboarding_primary)
-                                    .setSecondaryText(R.string.background_service_onboarding_secondary)
-                                    .setPromptStateChangeListener(new MaterialTapTargetPrompt.PromptStateChangeListener() {
-                                        @Override
-                                        public void onPromptStateChanged(@NonNull MaterialTapTargetPrompt prompt, int state) {
-                                            if(state == MaterialTapTargetPrompt.STATE_FOCAL_PRESSED || state == MaterialTapTargetPrompt.STATE_NON_FOCAL_PRESSED)
-                                                new MaterialTapTargetPrompt.Builder(getActivity())
-                                                        .setTarget(R.id.enable_live_tracking_checkBox)
-                                                        .setPrimaryText(R.string.live_tracking_onboarding_primary)
-                                                        .setSecondaryText(R.string.live_tracking_onboarding_secondary)
-                                                        .setPromptFocal(new RectanglePromptFocal())
-                                                        .show();
-                                        }
-                                    })
-                                    .setPromptFocal(new RectanglePromptFocal())
-                                    .show();
-                    }
-                })
                 .setFocalRadius((float) 170.0)
                 .show();
     }
-    */
+
     void displayResultsFromServer(Location location){
         final TextView riskView = getView().findViewById(R.id.riskTextView);
         Utils.getResultsFromAppServer(getContext(), location, new ServerResultListener() {

@@ -12,7 +12,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.Switch;
 
@@ -23,10 +22,13 @@ import com.google.android.gms.fitness.data.DataType;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 
+import uk.co.samuelwall.materialtaptargetprompt.MaterialTapTargetPrompt;
+import uk.co.samuelwall.materialtaptargetprompt.extras.focals.RectanglePromptFocal;
+
 public class ServicesFragment extends Fragment {
     private static final String PREFERENCE_ENABLE_BACKGROUND_SERVICE = "enable_background_service";
     private static final String PREFERENCE_ENABLE_LIVE_TRACKING = "enable_live_tracking";
-    private static final String PREFERENCE_COMPLETED_ONBOARDING = "completed_onboarding";
+    private static final String PREFERENCE_COMPLETED_ONBOARDING = "completed_services_onboarding";
     private static final int GOOGLE_FIT_PERMISSIONS_REQUEST_CODE = 10;
     private Intent mLiveTrackingServiceIntent = null;
     private static final String TAG = "torrid";
@@ -43,12 +45,19 @@ public class ServicesFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState){
         final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getView().getContext());
-        Switch enableServiceSwitch = getView().findViewById(R.id.enable_background_checkbox);
-        Switch enableLiveTrackingSwitch = getView().findViewById(R.id.enable_live_tracking_checkBox);
+        Switch enableServiceSwitch = getView().findViewById(R.id.enable_background_switch);
+        Switch enableLiveTrackingSwitch = getView().findViewById(R.id.enable_live_tracking_switch);
 
         mStatusUpdateService = new StatusUpdateService();
         mLiveTrackingServiceIntent = new Intent(getView().getContext(), LiveTrackingService.class);
         enableServiceSwitch.setChecked( preferences.getBoolean(PREFERENCE_ENABLE_BACKGROUND_SERVICE, false) );
+
+        if(!preferences.getBoolean(PREFERENCE_COMPLETED_ONBOARDING,false)){
+            showOnboarding();
+            SharedPreferences.Editor editor = preferences.edit();
+            editor.putBoolean(PREFERENCE_COMPLETED_ONBOARDING, true);
+            editor.apply();
+        }
 
         enableServiceSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -118,6 +127,27 @@ public class ServicesFragment extends Fragment {
                 });
 
         getActivity().stopService(mLiveTrackingServiceIntent);
+    }
+
+    private void showOnboarding(){
+        new MaterialTapTargetPrompt.Builder(getActivity())
+                .setTarget(R.id.enable_background_switch)
+                .setPrimaryText(R.string.background_service_onboarding_primary)
+                .setSecondaryText(R.string.background_service_onboarding_secondary)
+                .setPromptStateChangeListener(new MaterialTapTargetPrompt.PromptStateChangeListener() {
+                    @Override
+                    public void onPromptStateChanged(@NonNull MaterialTapTargetPrompt prompt, int state) {
+                        if(state == MaterialTapTargetPrompt.STATE_FOCAL_PRESSED || state == MaterialTapTargetPrompt.STATE_NON_FOCAL_PRESSED)
+                            new MaterialTapTargetPrompt.Builder(getActivity())
+                                    .setTarget(R.id.enable_live_tracking_switch)
+                                    .setPrimaryText(R.string.live_tracking_onboarding_primary)
+                                    .setSecondaryText(R.string.live_tracking_onboarding_secondary)
+                                    .setPromptFocal(new RectanglePromptFocal())
+                                    .show();
+                    }
+                })
+                .setPromptFocal(new RectanglePromptFocal())
+                .show();
     }
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent Data){
