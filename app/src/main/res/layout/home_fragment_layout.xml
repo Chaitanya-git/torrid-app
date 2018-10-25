@@ -1,26 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools">
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/home_fragment_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
     <android.support.constraint.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         tools:context=".HomeFragment">
 
-        <android.support.v7.widget.Toolbar
+        <android.support.design.widget.AppBarLayout
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@color/colorPrimary"
+            android:elevation="4dp"
             android:minHeight="?attr/actionBarSize"
-            android:textAlignment="textStart"
-            android:theme="@style/ThemeOverlay.AppCompat.ActionBar"
-            app:title="@string/torrid"
-            app:titleTextAppearance="@style/AppTheme"
-            app:titleTextColor="@color/common_google_signin_btn_text_dark_default" />
+            android:theme="@style/ThemeOverlay.MaterialComponents.ActionBar"
+            android:gravity="center">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="@string/torrid"
+                android:textSize="20sp"
+                android:textColor="@color/common_google_signin_btn_text_dark"
+                android:textStyle="bold"
+                android:paddingStart="15sp"
+                android:paddingEnd="15sp"
+                />
+        </android.support.design.widget.AppBarLayout>
 
         <TextView
             android:id="@+id/riskTextView"

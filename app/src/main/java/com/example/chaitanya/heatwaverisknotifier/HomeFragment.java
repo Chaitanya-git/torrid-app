@@ -41,7 +41,6 @@ public class HomeFragment extends Fragment{
     private Intent mLiveTrackingServiceIntent = null;
     private static final String TAG = "torrid";
     StatusUpdateService mStatusUpdateService;
-
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -53,7 +52,6 @@ public class HomeFragment extends Fragment{
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getView().getContext());
-
 
         Button checkButton = getView().findViewById(R.id.check_button);
 
@@ -138,20 +136,24 @@ public class HomeFragment extends Fragment{
         Utils.getResultsFromAppServer(getContext(), location, new ServerResultListener() {
             @Override
             public void onResult(boolean isHeatwave) {
-                if(isHeatwave)
+                if(isHeatwave) {
                     riskView.setText(R.string.at_risk_message);
+                    getView().getRootView().setBackgroundColor(0xff8c00);
+                }
                 else
                     riskView.setText(R.string.safe_message);
             }
 
             @Override
             public void onResponseFormatError(JSONException e) {
+
                 riskView.setText(R.string.unexpected_server_response_message);
             }
 
             @Override
             public void onVolleyError(VolleyError e) {
                 riskView.setText(R.string.network_error);
+                //getActivity().findViewById(R.id.home_fragment_layout).setBackgroundColor(0xff8c00);
             }
         });
     }

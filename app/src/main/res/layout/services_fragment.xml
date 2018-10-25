@@ -10,17 +10,27 @@
         android:layout_height="match_parent"
         tools:context=".HomeFragment">
 
-        <android.support.v7.widget.Toolbar
+        <android.support.design.widget.AppBarLayout
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@color/colorPrimary"
+            android:elevation="4dp"
             android:minHeight="?attr/actionBarSize"
-            android:textAlignment="textStart"
-            android:theme="@style/ThemeOverlay.AppCompat.ActionBar"
-            app:title="@string/torrid_services"
-            app:titleTextAppearance="@style/AppTheme"
-            app:titleTextColor="@color/common_google_signin_btn_text_dark_default" />
+            android:theme="@style/ThemeOverlay.MaterialComponents.ActionBar"
+            android:gravity="center">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="@string/torrid_services"
+                android:textSize="20sp"
+                android:textColor="@color/common_google_signin_btn_text_dark"
+                android:textStyle="bold"
+                android:paddingStart="15sp"
+                android:paddingEnd="15sp"
+                />
+        </android.support.design.widget.AppBarLayout>
 
         <Switch
             android:id="@+id/enable_background_checkbox"
