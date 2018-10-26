@@ -8,8 +8,10 @@ import android.app.NotificationManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.location.Location;
 import android.os.Build;
+import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
@@ -27,7 +29,9 @@ import org.json.JSONObject;
 class Utils {
     private static final int LOCATION_REQUEST_RESULT = 1;
     static final String CHANNEL_ID = "HeatwaveAlerts";
-    static String serverUrl = "http://torrid.southindia.cloudapp.azure.com:8080/";
+    static String serverUrl = "https://torridapp.southindia.cloudapp.azure.com/";
+    static String usersEndpoint = serverUrl+"users";
+    //static String serverUrl = "http://ptsv2.com/t/m5kc9-1540554143/";
     static void requestAccessFineLocation(Activity activity){
         ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_REQUEST_RESULT);
     }
@@ -58,6 +62,28 @@ class Utils {
                     }
                 }
                 );
+        queue.add(request);
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
+        if(!preferences.contains("userid")) return;
+        endpointUrl = serverUrl+"users";
+        try {
+            jsonLocation.put("userid", preferences.getString("userid", ""));
+        } catch (JSONException e) {
+            Log.i("TORRID_RD_USR_ID_ERROR", "Error: "+ e.getMessage());
+        }
+        request = new JsonObjectRequest(Request.Method.PUT, endpointUrl, jsonLocation,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        Log.i("TORRID_USR_UPDATE","User loc update response: " + response.toString());
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Log.e("TORRID_USR_UPDATE_ERROR", error.getMessage());
+                    }
+                });
         queue.add(request);
     }
 

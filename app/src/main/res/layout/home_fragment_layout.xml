@@ -19,10 +19,11 @@
             android:elevation="4dp"
             android:minHeight="?attr/actionBarSize"
             android:theme="@style/ThemeOverlay.MaterialComponents.ActionBar"
-            android:gravity="center">
+            android:gravity="center_vertical"
+            app:menu="@menu/home_toolbar">
 
             <TextView
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:text="@string/torrid"
                 android:textSize="20sp"
@@ -31,6 +32,7 @@
                 android:paddingStart="15sp"
                 android:paddingEnd="15sp"
                 />
+
         </android.support.design.widget.AppBarLayout>
 
         <TextView
@@ -43,6 +45,17 @@
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
+
+        <android.support.design.button.MaterialButton
+            android:id="@+id/info_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
+            android:text="Tips"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/toolbar"
+            tools:theme="@style/Widget.MaterialComponents.Button.OutlinedButton" />
 
         <Button
             android:id="@+id/check_button"

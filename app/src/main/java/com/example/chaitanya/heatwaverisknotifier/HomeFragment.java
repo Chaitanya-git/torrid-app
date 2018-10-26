@@ -54,6 +54,7 @@ public class HomeFragment extends Fragment{
         final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getView().getContext());
 
         Button checkButton = getView().findViewById(R.id.check_button);
+        Button tipsButton = getView().findViewById(R.id.info_button);
 
         if(!preferences.getBoolean(PREFERENCE_COMPLETED_ONBOARDING, false)){
             showOnboarding();
@@ -62,6 +63,13 @@ public class HomeFragment extends Fragment{
             editor.apply();
         }
 
+        tipsButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent tipsIntent = new Intent(getContext(), TipsActivity.class);
+                startActivity(tipsIntent);
+            }
+        });
 
         checkButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -91,12 +99,7 @@ public class HomeFragment extends Fragment{
 
             }
         });
-
-
-
     }
-
-
 
     private void showOnboarding() {
         new MaterialTapTargetPrompt.Builder(this)
@@ -112,9 +115,9 @@ public class HomeFragment extends Fragment{
         Utils.getResultsFromAppServer(getContext(), location, new ServerResultListener() {
             @Override
             public void onResult(boolean isHeatwave) {
-                if(isHeatwave) {
+                if(!isHeatwave) {
                     riskView.setText(R.string.at_risk_message);
-                    getView().getRootView().setBackgroundColor(0xff8c00);
+                    //getView().getRootView().setBackgroundColor(0xff8c00);
                 }
                 else
                     riskView.setText(R.string.safe_message);

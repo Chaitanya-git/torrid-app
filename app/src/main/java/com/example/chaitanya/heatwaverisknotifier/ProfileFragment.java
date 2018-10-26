@@ -59,7 +59,6 @@ public class ProfileFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState){
         ImageButton profilePic = getActivity().findViewById(R.id.profileImageButton);
         Button updateButton = getActivity().findViewById(R.id.update_button);
-        profilePic.setBackground(null);
         loadProfilePic();
         profilePic.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -80,33 +79,72 @@ public class ProfileFragment extends Fragment {
                 String name = nameField.getEditText().getText().toString();
                 TextInputEditText phoneField = getActivity().findViewById(R.id.contact_input_layout);
                 String phoneNumber = phoneField.getText().toString();
+                final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext());
+
 
                 RequestQueue queue = Volley.newRequestQueue(getActivity().getBaseContext());
                 String endpointUrl = Utils.serverUrl+"users";
                 JSONObject userRegJson = new JSONObject();
+
                 try {
-                    SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext());
-                    userRegJson.put("userid", preferences.getString("userid", ""));
+                    if(preferences.contains("userid"))
+                        userRegJson.put("userid", preferences.getString("userid", ""));
+                    else {
+                        userRegJson.put("regtoken", "regtoken");
+                        /*userRegJson.put("lat",13.352585);
+                        userRegJson.put("lon",74.793579);
+                        */
+                    }
+                    Log.i("HEAT", "Error"+preferences.getString("userid", ""));
                     userRegJson.put("name", name);
-                    userRegJson.put("num", phoneNumber);
+                    userRegJson.put("num", Long.valueOf(phoneNumber));
                 } catch (JSONException e) {
                     Log.i("HEATWAVE", e.getLocalizedMessage());
                     e.printStackTrace();
                 }
-                JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, endpointUrl, userRegJson,
-                        new Response.Listener<JSONObject>() {
-                            @Override
-                            public void onResponse(JSONObject response) {
-                                Log.i("HEATWAVE", "Sent user details to server");
+                JsonObjectRequest request;
+                if(preferences.contains("userid")) {
+                    request = new JsonObjectRequest(Request.Method.PUT, endpointUrl, userRegJson,
+                            new Response.Listener<JSONObject>() {
+                                @Override
+                                public void onResponse(JSONObject response) {
+                                    Log.i("HEATWAVE", "Sent user details to server");
+                                }
+                            },
+                            new Response.ErrorListener() {
+                                @Override
+                                public void onErrorResponse(VolleyError error) {
+                                    Log.i("HEATWAVE_V", "Error:" + error.getMessage());
+                                }
                             }
-                        },
-                        new Response.ErrorListener() {
-                            @Override
-                            public void onErrorResponse(VolleyError error) {
-                                Log.i("HEATWAVE", "Error:"+error.getMessage());
-                            }
-                        }
-                );
+                    );
+                    Log.i("TORRID_REG", "Updating details");
+                }
+                else {
+                    request = new JsonObjectRequest(Request.Method.POST, endpointUrl, userRegJson,
+                            new Response.Listener<JSONObject>() {
+                                @Override
+                                public void onResponse(JSONObject response) {
+                                    SharedPreferences.Editor editor = preferences.edit();
+                                    Log.i("TORRID_REG_RESP", response.toString());
+                                    try {
+                                        editor.putString("userid", response.getJSONObject("data").getString("_id"));
+                                    } catch (JSONException e) {
+                                        Log.e("TORRID_USER_REG_ERROR", e.getLocalizedMessage());
+                                        e.printStackTrace();
+                                    }
+                                    editor.apply();
+                                }
+                            },
+                            new Response.ErrorListener() {
+                                @Override
+                                public void onErrorResponse(VolleyError error) {
+                                    error.printStackTrace();
+                                }
+                            });
+                    Log.i("TORRID_REG", "Registering new user");
+                }
+                Log.i("TORRID_JSON", userRegJson.toString());
                 queue.add(request);
             }
         });
@@ -176,14 +214,15 @@ public class ProfileFragment extends Fragment {
             return;
         }
         File mypath = new File(directory, "thumbnail.png");
+        ImageButton proPicButton = getActivity().findViewById(R.id.profileImageButton);
         try{
             FileInputStream inputStream = new FileInputStream(mypath);
-            ImageButton proPicButton = getActivity().findViewById(R.id.profileImageButton);
             Bitmap pic = BitmapFactory.decodeStream(inputStream);
             proPicButton.setImageBitmap(pic);
         }
         catch (FileNotFoundException e){
-            e.printStackTrace();
+            proPicButton.setBackground(null);
+
         }
     }
 }

@@ -14,6 +14,7 @@ import android.util.Log;
 import android.view.MenuItem;
 
 import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.messaging.FirebaseMessagingService;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -26,7 +27,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Utils.createNotificationChannel(this);
-        FirebaseMessaging.getInstance().setAutoInitEnabled(true);
+        Intent pushNotificationIntent = new Intent(this, PushNotificationService.class);
+        startService(pushNotificationIntent);
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         final FragmentManager fragmentManager = getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();

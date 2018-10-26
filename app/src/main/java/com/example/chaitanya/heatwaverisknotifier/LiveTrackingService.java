@@ -1,13 +1,24 @@
 package com.example.chaitanya.heatwaverisknotifier;
 
 import android.app.Service;
+import android.app.VoiceInteractor;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.location.Location;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
+import android.service.autofill.Dataset;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.fitness.Fitness;
@@ -16,6 +27,7 @@ import com.google.android.gms.fitness.SensorsClient;
 import com.google.android.gms.fitness.data.DataPoint;
 import com.google.android.gms.fitness.data.DataSet;
 import com.google.android.gms.fitness.data.DataType;
+import com.google.android.gms.fitness.data.Field;
 import com.google.android.gms.fitness.request.DataReadRequest;
 import com.google.android.gms.fitness.request.OnDataPointListener;
 import com.google.android.gms.fitness.request.SensorRequest;
@@ -24,11 +36,16 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import static java.text.DateFormat.getAvailableLocales;
 import static java.text.DateFormat.getDateInstance;
 
 public class LiveTrackingService extends Service {
@@ -104,10 +121,69 @@ public class LiveTrackingService extends Service {
                         @Override
                         public void onSuccess(DataReadResponse dataReadResponse) {
                             List<DataSet> dataSets = dataReadResponse.getDataSets();
-                            if(dataSets.size() > 0 && dataSets.get(0).getDataPoints().size() > 0)
-                                Log.i("TORRID_DATAPOINTS", dataSets.get(0).getDataPoints().get(dataSets.get(0).getDataPoints().size()-1).toString());
-                            else
+                            if(dataSets.size() > 0 && dataSets.get(0).getDataPoints().size() > 0) {
+                                List<DataPoint> heartrates = dataSets.get(0).getDataPoints();
+                                Log.i("TORRID_DATAPOINTS", dataSets.get(0).getDataPoints().get(dataSets.get(0).getDataPoints().size() - 1).toString());
+                                RequestQueue queue = Volley.newRequestQueue(getApplicationContext());
+                                for(DataPoint bpm: heartrates){
+                                    JSONObject bpmJSON = new JSONObject();
+                                    SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+                                    try {
+                                        bpmJSON.put("userid", preferences.getString("userid", ""));
+                                        bpmJSON.put("heart_rate", bpm.getValue(Field.FIELD_BPM));
+                                    }
+                                    catch (JSONException e){
+                                        Log.i("TORRID_LIVE_TRACKING", "ERROR: "+e.getMessage());
+                                    }
+                                    JsonObjectRequest request = new JsonObjectRequest(Request.Method.PUT, Utils.usersEndpoint, bpmJSON,
+                                            new Response.Listener<JSONObject>() {
+                                                @Override
+                                                public void onResponse(JSONObject response) {
+                                                    Log.i("TORRID_LIVE_TRACKING: ", "Sent bpm to server");
+                                                    checkIfAffected(response);
+                                                }
+                                            },
+                                            new Response.ErrorListener() {
+                                                @Override
+                                                public void onErrorResponse(VolleyError error) {
+                                                    Log.i("TORRID_LIVE_TRACKING: ", "Error sending bpm");
+                                                }
+                                            }
+                                    );
+                                    queue.add(request);
+                                }
+
+                            }
+                            else {
+                                RequestQueue queue = Volley.newRequestQueue(getApplicationContext());
+
+                                JSONObject bpmJSON = new JSONObject();
+                                SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+                                try {
+                                    bpmJSON.put("userid", preferences.getString("userid", ""));
+                                    bpmJSON.put("heart_rate", 120);
+                                }
+                                catch (JSONException e){
+                                    Log.i("TORRID_LIVE_TRACKING", "ERROR: "+e.getMessage());
+                                }
+                                JsonObjectRequest request = new JsonObjectRequest(Request.Method.PUT, Utils.usersEndpoint, bpmJSON,
+                                        new Response.Listener<JSONObject>() {
+                                            @Override
+                                            public void onResponse(JSONObject response) {
+                                                Log.i("TORRID_LIVE_TRACKING: ", "Sent bpm to server");
+                                                checkIfAffected(response);
+                                            }
+                                        },
+                                        new Response.ErrorListener() {
+                                            @Override
+                                            public void onErrorResponse(VolleyError error) {
+                                                Log.i("TORRID_LIVE_TRACKING: ", "Error sending bpm"+error.getLocalizedMessage());
+                                            }
+                                        }
+                                );
+                                queue.add(request);
                                 Log.i("TORRID_DATAPOINTS", "NO new datapoints");
+                            }
                         }
                     });
                     try{
@@ -125,5 +201,58 @@ public class LiveTrackingService extends Service {
     private void stopLiveTracking(){
         //Fitness.getSensorsClient(getApplicationContext(), GoogleSignIn.getLastSignedInAccount(getApplicationContext()))
         liveTrackingOn = false;
+    }
+
+    private void checkIfAffected(JSONObject response){
+        try {
+            JSONArray data = response.getJSONArray("IsAnomaly");
+            if (!data.getBoolean(data.length() - 1)) {
+                final RequestQueue queue = Volley.newRequestQueue(getApplicationContext());
+                final JSONObject affectedUser = new JSONObject();
+                new LocationProvider(getApplicationContext(), null).requestLocation(new LocationProviderResultListener() {
+                    @Override
+                    public void onSuccess(Location location) {
+                        try {
+                            Log.i("CHECK_IF_AFFECTED", "Sending ...");
+                            affectedUser.put("lat", location.getLatitude());
+                            affectedUser.put("lon", location.getLongitude());
+                            affectedUser.put("userid", PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getString("userid", ""));
+                            JsonObjectRequest request = new JsonObjectRequest(Request.Method.PUT, Utils.usersEndpoint, affectedUser,
+                                    new Response.Listener<JSONObject>() {
+                                        @Override
+                                        public void onResponse(JSONObject response) {
+                                            Log.i("AFFECTED_USER_RESPONSE", response.toString());
+                                        }
+                                    },
+                                    new Response.ErrorListener() {
+                                        @Override
+                                        public void onErrorResponse(VolleyError error) {
+                                            Log.i("AFFECTED_USER_ERR", "Error"+error.getMessage());
+                                        }
+                                    }
+                            );
+                            queue.add(request);
+                        }
+                        catch(JSONException e){
+                            Log.e("TORRID_AFFECTED_USR", e.getLocalizedMessage());
+                        }
+                    }
+
+                    @Override
+                    public void onPermissionDenied() {
+                        Log.e("TORRID_AFFECTED_USER", "Permission denied when accessing location");
+                    }
+
+                    @Override
+                    public void onFailure() {
+
+                    }
+                });
+            }
+        }
+        catch (JSONException e){
+            Log.e("TORRID_AFFECTED", "Error: "+e.getMessage());
+        }
+
     }
 }

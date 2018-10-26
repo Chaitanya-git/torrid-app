@@ -27,6 +27,8 @@ public class PushNotificationService extends FirebaseMessagingService {
 
     @Override
     public void onNewToken(String token){
+
+        Log.i("TORRID_FIREBASE", "Generated new token");
         registerUserWithServer(token);
     }
 
@@ -45,53 +47,40 @@ public class PushNotificationService extends FirebaseMessagingService {
         notificationManagerCompat.notify(PUSH_NOTIFICATION_ID, builder.build());
     }
     private void registerUserWithServer(final String token){
-        new LocationProvider(getBaseContext(), null).requestLocation(new LocationProviderResultListener() {
-            @Override
-            public void onSuccess(Location location) {
-                Log.i("HEATWAVE","Sending location back to server...");
-                RequestQueue queue = Volley.newRequestQueue(getBaseContext());
-                String endpointUrl = Utils.serverUrl+"users";
-                JSONObject userRegJson = new JSONObject();
-                try {
-                    userRegJson.put("userid", token);
-                } catch (JSONException e) {
-                    Log.i("HEATWAVE", e.getLocalizedMessage());
-                    e.printStackTrace();
-                }
-                JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, endpointUrl, userRegJson,
-                        new Response.Listener<JSONObject>() {
-                            @Override
-                            public void onResponse(JSONObject response) {
-                                try{
-                                    SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-                                    SharedPreferences.Editor editor = preferences.edit();
-                                    editor.putString(USER_ID_PREF, response.getString("userid"));
-                                }
-                                catch (JSONException e){
-                                    e.printStackTrace();
-                                }
-                                Log.i("HEATWAVE", "Sent location to server");
-                            }
-                        },
-                        new Response.ErrorListener() {
-                            @Override
-                            public void onErrorResponse(VolleyError error) {
-                                Log.i("HEATWAVE", error.getMessage());
-                            }
+        Log.i("HEATWAVE","Sending location back to server...");
+        RequestQueue queue = Volley.newRequestQueue(getBaseContext());
+        String endpointUrl = Utils.serverUrl+"users";
+        JSONObject userRegJson = new JSONObject();
+        try {
+            userRegJson.put("userid", token);
+        } catch (JSONException e) {
+            Log.i("HEATWAVE", e.getLocalizedMessage());
+            e.printStackTrace();
+        }
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.PUT, endpointUrl, userRegJson,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        try{
+                            Log.i("TORRID_FIREBASE_RESP", response.toString());
+                            SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+                            SharedPreferences.Editor editor = preferences.edit();
+                            editor.putString(USER_ID_PREF, response.getString("userid"));
+                            editor.apply();
                         }
-                );
-                queue.add(request);
-            }
-
-            @Override
-            public void onPermissionDenied() {
-
-            }
-
-            @Override
-            public void onFailure() {
-
-            }
-        });
+                        catch (JSONException e){
+                            e.printStackTrace();
+                        }
+                        Log.i("HEATWAVE", "Sent location to server");
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Log.i("HEATWAVE", error.getMessage());
+                    }
+                }
+        );
+        queue.add(request);
     }
 }
