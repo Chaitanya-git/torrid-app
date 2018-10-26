@@ -49,6 +49,8 @@ import java.io.FileOutputStream;
 import static android.app.Activity.RESULT_OK;
 
 public class ProfileFragment extends Fragment {
+    private static final String USER_NAME = "username";
+    private static final String PHONE = "phone_number";
     private final int RESULT_PICK_IMAGE = 5;
     private final int REQUEST_STORAGE_PERMISSION = 10;
     private String ONBOARDING_COMPLETED = "profile_onboarding_completed";
@@ -111,6 +113,9 @@ public class ProfileFragment extends Fragment {
                     Log.i("HEAT", "Error"+preferences.getString("userid", ""));
                     userRegJson.put("name", name);
                     userRegJson.put("num", Long.valueOf(phoneNumber));
+                    SharedPreferences.Editor editor = preferences.edit();
+                    editor.putString(USER_NAME,name);
+                    editor.putString(PHONE, phoneNumber);
                 } catch (JSONException e) {
                     Log.i("HEATWAVE", e.getLocalizedMessage());
                     e.printStackTrace();
