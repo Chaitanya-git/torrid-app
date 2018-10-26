@@ -12,7 +12,7 @@
     <string name="cancel">Cancel</string>
     <string name="gps_enable_user_request">Enable GPS location service to find current location.  Click OK to go to location services settings to let you do so.</string>
     <string name="enable_background_service">Enable background service</string>
-    <string name="at_risk_message">AT RISK!!</string>
+    <string name="at_risk_message">AT RISK!</string>
     <string name="safe_message">Looks like you\'re safe</string>
     <string name="unexpected_server_response_message">Unexpected result from server</string>
     <string name="network_error">Network error</string>

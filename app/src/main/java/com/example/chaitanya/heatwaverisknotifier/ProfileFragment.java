@@ -19,7 +19,10 @@ import android.support.annotation.Nullable;
 import android.support.design.widget.TextInputEditText;
 import android.support.design.widget.TextInputLayout;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -48,6 +51,7 @@ import static android.app.Activity.RESULT_OK;
 public class ProfileFragment extends Fragment {
     private final int RESULT_PICK_IMAGE = 5;
     private final int REQUEST_STORAGE_PERMISSION = 10;
+    private String ONBOARDING_COMPLETED = "profile_onboarding_completed";
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
@@ -71,6 +75,17 @@ public class ProfileFragment extends Fragment {
                 }
             }
         });
+        final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext());
+
+        System.out.println(preferences.getBoolean(ONBOARDING_COMPLETED, false));
+        if(!preferences.getBoolean(ONBOARDING_COMPLETED, false)){
+            Log.i("TORRID PROFILE","Onboarding not done");
+            UserRegistrationPromptDialog dialog = new UserRegistrationPromptDialog();
+            dialog.show(getFragmentManager(), "user_reg_prompt");
+            SharedPreferences.Editor editor = preferences.edit();
+            editor.putBoolean(ONBOARDING_COMPLETED,true);
+            editor.apply();
+        }
 
         updateButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -79,8 +94,6 @@ public class ProfileFragment extends Fragment {
                 String name = nameField.getEditText().getText().toString();
                 TextInputEditText phoneField = getActivity().findViewById(R.id.contact_input_layout);
                 String phoneNumber = phoneField.getText().toString();
-                final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext());
-
 
                 RequestQueue queue = Volley.newRequestQueue(getActivity().getBaseContext());
                 String endpointUrl = Utils.serverUrl+"users";
