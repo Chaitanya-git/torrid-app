@@ -38,4 +38,6 @@
     <string name="mobile_number">Mobile number</string>
     <string name="update">Update</string>
     <string name="profile_picture">Profile picture</string>
+    <string name="user_reg_message">To use app features such as live tracking and automatic SOS to hospitals, some user profile information is required. Please fill the user profile and press update to be able to use these features.</string>
+    <string name="user_reg_prompt">User Registration Prompt</string>
 </resources>

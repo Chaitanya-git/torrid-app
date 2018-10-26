@@ -10,7 +10,8 @@ public class UserRegistrationPromptDialog extends DialogFragment {
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState){
         AlertDialog.Builder builder= new AlertDialog.Builder(getActivity());
-        builder.setMessage(R.string.location_request_rationale)
+        builder.setTitle(R.string.user_reg_prompt)
+                .setMessage(R.string.user_reg_message)
                 .setPositiveButton(R.string.next, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
