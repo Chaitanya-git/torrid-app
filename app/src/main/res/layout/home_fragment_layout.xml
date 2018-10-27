@@ -17,21 +17,20 @@
             android:layout_height="wrap_content"
             android:background="@color/colorPrimary"
             android:elevation="4dp"
-            android:minHeight="?attr/actionBarSize"
-            android:theme="@style/ThemeOverlay.MaterialComponents.ActionBar"
             android:gravity="center_vertical"
+            android:minHeight="?attr/actionBarSize"
+            android:theme="@style/Widget.MaterialComponents.Button.OutlinedButton"
             app:menu="@menu/home_toolbar">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
-                android:text="@string/torrid"
-                android:textSize="20sp"
-                android:textColor="@color/common_google_signin_btn_text_dark"
-                android:textStyle="bold"
                 android:paddingStart="15sp"
                 android:paddingEnd="15sp"
-                />
+                android:text="@string/torrid"
+                android:textColor="@color/common_google_signin_btn_text_dark"
+                android:textSize="20sp"
+                android:textStyle="bold" />
 
         </android.support.design.widget.AppBarLayout>
 
