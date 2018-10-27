@@ -9,6 +9,7 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.preference.Preference;
@@ -29,6 +30,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageButton;
 
 import com.android.volley.Request;
@@ -79,7 +81,12 @@ public class ProfileFragment extends Fragment {
         });
         final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext());
 
-        System.out.println(preferences.getBoolean(ONBOARDING_COMPLETED, false));
+        EditText nameInput = getView().findViewById(R.id.name_input_layout);
+        nameInput.setText(preferences.getString(USER_NAME,""));
+
+        EditText phoneInput = getView().findViewById(R.id.contact_input_layout);
+        phoneInput.setText(preferences.getString(PHONE, ""));
+
         if(!preferences.getBoolean(ONBOARDING_COMPLETED, false)){
             Log.i("TORRID PROFILE","Onboarding not done");
             UserRegistrationPromptDialog dialog = new UserRegistrationPromptDialog();
@@ -116,6 +123,7 @@ public class ProfileFragment extends Fragment {
                     SharedPreferences.Editor editor = preferences.edit();
                     editor.putString(USER_NAME,name);
                     editor.putString(PHONE, phoneNumber);
+                    editor.apply();
                 } catch (JSONException e) {
                     Log.i("HEATWAVE", e.getLocalizedMessage());
                     e.printStackTrace();
@@ -234,13 +242,13 @@ public class ProfileFragment extends Fragment {
         File mypath = new File(directory, "thumbnail.png");
         ImageButton proPicButton = getActivity().findViewById(R.id.profileImageButton);
         try{
-            FileInputStream inputStream = new FileInputStream(mypath);
+            FileInputStream inputStream;
+            inputStream = new FileInputStream(mypath);
             Bitmap pic = BitmapFactory.decodeStream(inputStream);
             proPicButton.setImageBitmap(pic);
         }
         catch (FileNotFoundException e){
-            proPicButton.setBackground(null);
-
+            proPicButton.setBackgroundResource(R.drawable.pro_pic_dummy);
         }
     }
 }

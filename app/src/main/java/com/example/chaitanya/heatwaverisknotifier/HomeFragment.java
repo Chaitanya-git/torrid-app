@@ -2,18 +2,25 @@ package com.example.chaitanya.heatwaverisknotifier;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AppComponentFactory;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.location.Location;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.design.widget.AppBarLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -35,12 +42,15 @@ import uk.co.samuelwall.materialtaptargetprompt.MaterialTapTargetPrompt;
 import uk.co.samuelwall.materialtaptargetprompt.extras.focals.RectanglePromptFocal;
 
 public class HomeFragment extends Fragment{
-    private static final String PREFERENCE_ENABLE_BACKGROUND_SERVICE = "enable_background_service";
     private static final String PREFERENCE_COMPLETED_ONBOARDING = "completed_home_onboarding";
-    private static final int GOOGLE_FIT_PERMISSIONS_REQUEST_CODE = 10;
-    private Intent mLiveTrackingServiceIntent = null;
     private static final String TAG = "torrid";
-    StatusUpdateService mStatusUpdateService;
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setHasOptionsMenu(true);
+    }
+
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -54,7 +64,12 @@ public class HomeFragment extends Fragment{
         final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getView().getContext());
 
         Button checkButton = getView().findViewById(R.id.check_button);
-        Button tipsButton = getView().findViewById(R.id.info_button);
+
+        Toolbar appBar = getView().findViewById(R.id.toolbar);
+        appBar.setTitle(R.string.torrid);
+        appBar.setTitleTextColor(Color.WHITE);
+
+        ((AppCompatActivity) getActivity()).setSupportActionBar(appBar);
 
         if(!preferences.getBoolean(PREFERENCE_COMPLETED_ONBOARDING, false)){
             showOnboarding();
@@ -63,13 +78,6 @@ public class HomeFragment extends Fragment{
             editor.apply();
         }
 
-        tipsButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent tipsIntent = new Intent(getContext(), TipsActivity.class);
-                startActivity(tipsIntent);
-            }
-        });
 
         checkButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -101,6 +109,21 @@ public class HomeFragment extends Fragment{
         });
     }
 
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        Log.i("ACTIONBAR", "ITEM:"+item.getItemId());
+
+        switch (item.getItemId()) {
+            case R.id.tips_button:
+                Intent tipsIntent = new Intent(getContext(), TipsActivity.class);
+                startActivity(tipsIntent);
+            default:
+                // If we got here, the user's action was not recognized.
+                // Invoke the superclass to handle it.
+                return super.onOptionsItemSelected(item);
+
+        }
+    }
     private void showOnboarding() {
         new MaterialTapTargetPrompt.Builder(this)
                 .setTarget(R.id.check_button)
@@ -115,7 +138,7 @@ public class HomeFragment extends Fragment{
         Utils.getResultsFromAppServer(getContext(), location, new ServerResultListener() {
             @Override
             public void onResult(boolean isHeatwave) {
-                if(!isHeatwave) {
+                if(isHeatwave) {
                     riskView.setText(R.string.at_risk_message);
                     //getView().getRootView().setBackgroundColor(0xff8c00);
                 }

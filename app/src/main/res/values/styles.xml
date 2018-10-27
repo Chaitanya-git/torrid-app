@@ -5,5 +5,7 @@
         <!-- Customize your theme here. -->
         <item name="android:fontFamily">google-sans</item>
     </style>
-
+    <style name="ToolBarStyle" parent="Theme.MaterialComponents.Light">
+        <item name="android:colorBackground">@color/common_google_signin_btn_text_light</item>
+    </style>
 </resources>
