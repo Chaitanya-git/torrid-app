@@ -29,6 +29,7 @@ public class PushNotificationService extends FirebaseMessagingService {
     public void onNewToken(String token){
 
         Log.i("TORRID_FIREBASE", "Generated new token "+token);
+        PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).edit().putString("regtoken",token).apply();
         registerUserWithServer(token);
     }
 

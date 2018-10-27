@@ -1,13 +1,17 @@
 package com.example.chaitanya.heatwaverisknotifier;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -25,12 +29,16 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import uk.co.samuelwall.materialtaptargetprompt.MaterialTapTargetPrompt;
 import uk.co.samuelwall.materialtaptargetprompt.extras.focals.RectanglePromptFocal;
 
+import static com.example.chaitanya.heatwaverisknotifier.Utils.LOCATION_REQUEST_RESULT;
+
 public class ServicesFragment extends Fragment {
     private static final String PREFERENCE_ENABLE_BACKGROUND_SERVICE = "enable_background_service";
     private static final String PREFERENCE_ENABLE_LIVE_TRACKING = "enable_live_tracking";
     private static final String PREFERENCE_COMPLETED_ONBOARDING = "completed_services_onboarding";
     private static final int GOOGLE_FIT_PERMISSIONS_REQUEST_CODE = 10;
     private Intent mLiveTrackingServiceIntent = null;
+    private Switch mEnableLiveTrackingSwitch;
+    private Switch mEnableServiceSwitch;
     private static final String TAG = "torrid";
     StatusUpdateService mStatusUpdateService;
 
@@ -45,12 +53,12 @@ public class ServicesFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState){
         final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getView().getContext());
-        Switch enableServiceSwitch = getView().findViewById(R.id.enable_background_switch);
-        Switch enableLiveTrackingSwitch = getView().findViewById(R.id.enable_live_tracking_switch);
+        mEnableServiceSwitch = getView().findViewById(R.id.enable_background_switch);
+        mEnableLiveTrackingSwitch = getView().findViewById(R.id.enable_live_tracking_switch);
 
         mStatusUpdateService = new StatusUpdateService();
         mLiveTrackingServiceIntent = new Intent(getView().getContext(), LiveTrackingService.class);
-        enableServiceSwitch.setChecked( preferences.getBoolean(PREFERENCE_ENABLE_BACKGROUND_SERVICE, false) );
+        mEnableServiceSwitch.setChecked( preferences.getBoolean(PREFERENCE_ENABLE_BACKGROUND_SERVICE, false) );
 
         if(!preferences.getBoolean(PREFERENCE_COMPLETED_ONBOARDING,false)){
             showOnboarding();
@@ -59,26 +67,33 @@ public class ServicesFragment extends Fragment {
             editor.apply();
         }
 
-        enableServiceSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        mEnableServiceSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
                 SharedPreferences.Editor editor = preferences.edit();
                 editor.putBoolean(PREFERENCE_ENABLE_BACKGROUND_SERVICE, isChecked);
                 editor.apply();
 
-                if(isChecked)
+                if(isChecked) {
+                    if(ContextCompat.checkSelfPermission(getContext(),Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                        if(shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)){
+                            new LocationRationaleDialogFragment().show(getActivity().getSupportFragmentManager(), "location_access_request");
+                        }
+                        else{
+                            requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, Utils.LOCATION_REQUEST_RESULT);
+                        }
+                    }
                     mStatusUpdateService.scheduleJob(getActivity().getApplicationContext());
+                }
                 else
                     mStatusUpdateService.cancelJob(getActivity().getApplicationContext());
             }
         });
 
-        enableLiveTrackingSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        mEnableLiveTrackingSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
-                SharedPreferences.Editor editor = preferences.edit();
-                editor.putBoolean(PREFERENCE_ENABLE_LIVE_TRACKING, isChecked);
-                editor.apply();
+
                 if(isChecked) {
                     Log.i("HEATWAVE", "Starting live tracking...");
                     FitnessOptions fitnessOptions = FitnessOptions.builder()
@@ -93,16 +108,39 @@ public class ServicesFragment extends Fragment {
                                 fitnessOptions);
                         compoundButton.setChecked(false);
                     }
+                    else if(!preferences.contains("userid")){
+                        new UserRegistrationPromptDialog().show(getFragmentManager(),"user_reg_prompt");
+                        compoundButton.setChecked(false);
+                    }
                     else {
                         startLiveTrackingService();
                     }
                 }
                 else stopLiveTrackingService();
 
+                SharedPreferences.Editor editor = preferences.edit();
+                editor.putBoolean(PREFERENCE_ENABLE_LIVE_TRACKING, compoundButton.isChecked());
+                editor.apply();
             }
         });
-        enableLiveTrackingSwitch.setChecked(preferences.getBoolean(PREFERENCE_ENABLE_LIVE_TRACKING, false));
+        mEnableLiveTrackingSwitch.setChecked(preferences.getBoolean(PREFERENCE_ENABLE_LIVE_TRACKING, false));
 
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+        Log.i("TORRID_PERMISSION", "CALLED");
+        switch (requestCode) {
+            case Utils.LOCATION_REQUEST_RESULT: {
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Log.i("TORRID_GRANTED", "PICKING");
+                    mEnableServiceSwitch.setChecked(true);
+                }
+                else mEnableServiceSwitch.setChecked(false);
+            }
+        }
     }
 
     private void startLiveTrackingService(){
@@ -154,7 +192,7 @@ public class ServicesFragment extends Fragment {
     public void onActivityResult(int requestCode, int resultCode, Intent Data){
         if(resultCode == Activity.RESULT_OK){
             if(requestCode == GOOGLE_FIT_PERMISSIONS_REQUEST_CODE){
-                startLiveTrackingService();
+                mEnableLiveTrackingSwitch.setChecked(true);
             }
         }
     }

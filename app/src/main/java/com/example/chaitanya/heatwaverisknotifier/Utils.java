@@ -27,7 +27,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 class Utils {
-    private static final int LOCATION_REQUEST_RESULT = 1;
+    static final int LOCATION_REQUEST_RESULT = 1;
     static final String CHANNEL_ID = "HeatwaveAlerts";
     static String serverUrl = "https://torridapp.southindia.cloudapp.azure.com/";
     static String usersEndpoint = serverUrl+"users";

@@ -1,8 +1,6 @@
 package com.example.chaitanya.heatwaverisknotifier;
 
 import android.Manifest;
-import android.app.Activity;
-import android.app.AppComponentFactory;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
@@ -11,39 +9,25 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.design.widget.AppBarLayout;
-import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
-import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.CheckBox;
-import android.widget.CompoundButton;
+import android.widget.ProgressBar;
 import android.widget.TextView;
-
 import com.android.volley.VolleyError;
-import com.google.android.gms.auth.api.signin.GoogleSignIn;
-import com.google.android.gms.fitness.Fitness;
-import com.google.android.gms.fitness.FitnessOptions;
-import com.google.android.gms.fitness.data.DataType;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-
 import org.json.JSONException;
-
 import uk.co.samuelwall.materialtaptargetprompt.MaterialTapTargetPrompt;
-import uk.co.samuelwall.materialtaptargetprompt.extras.focals.RectanglePromptFocal;
 
 public class HomeFragment extends Fragment{
     private static final String PREFERENCE_COMPLETED_ONBOARDING = "completed_home_onboarding";
     private static final String TAG = "torrid";
+    private ProgressBar mProgress;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -62,7 +46,7 @@ public class HomeFragment extends Fragment{
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getView().getContext());
-
+        mProgress = getView().findViewById(R.id.check_status_progressBar);
         Button checkButton = getView().findViewById(R.id.check_button);
 
         Toolbar appBar = getView().findViewById(R.id.toolbar);
@@ -82,7 +66,7 @@ public class HomeFragment extends Fragment{
         checkButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
+                mProgress.setVisibility(View.VISIBLE);
                 new LocationProvider(getActivity().getApplicationContext(),getActivity()).requestLocation(new LocationProviderResultListener() {
                     @Override
                     public void onSuccess(Location location) {
@@ -91,16 +75,18 @@ public class HomeFragment extends Fragment{
 
                     @Override
                     public void onPermissionDenied() {
-                        if(ActivityCompat.shouldShowRequestPermissionRationale(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION)){
+                        mProgress.setVisibility(View.INVISIBLE);
+                        if(shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)){
                             new LocationRationaleDialogFragment().show(getActivity().getSupportFragmentManager(), "location_access_request");
                         }
                         else{
-                            Utils.requestAccessFineLocation(getActivity());
+                            requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, Utils.LOCATION_REQUEST_RESULT);
                         }
                     }
 
                     @Override
                     public void onFailure() {
+                        mProgress.setVisibility(View.INVISIBLE);
                         Log.i("HEATWAVE", "Failed getting location");
                     }
                 });
@@ -118,8 +104,6 @@ public class HomeFragment extends Fragment{
                 Intent tipsIntent = new Intent(getContext(), TipsActivity.class);
                 startActivity(tipsIntent);
             default:
-                // If we got here, the user's action was not recognized.
-                // Invoke the superclass to handle it.
                 return super.onOptionsItemSelected(item);
 
         }
@@ -140,22 +124,22 @@ public class HomeFragment extends Fragment{
             public void onResult(boolean isHeatwave) {
                 if(isHeatwave) {
                     riskView.setText(R.string.at_risk_message);
-                    //getView().getRootView().setBackgroundColor(0xff8c00);
                 }
                 else
                     riskView.setText(R.string.safe_message);
+                mProgress.setVisibility(View.INVISIBLE);
             }
 
             @Override
             public void onResponseFormatError(JSONException e) {
-
+                mProgress.setVisibility(View.INVISIBLE);
                 riskView.setText(R.string.unexpected_server_response_message);
             }
 
             @Override
             public void onVolleyError(VolleyError e) {
+                mProgress.setVisibility(View.INVISIBLE);
                 riskView.setText(R.string.network_error);
-                //getActivity().findViewById(R.id.home_fragment_layout).setBackgroundColor(0xff8c00);
             }
         });
     }

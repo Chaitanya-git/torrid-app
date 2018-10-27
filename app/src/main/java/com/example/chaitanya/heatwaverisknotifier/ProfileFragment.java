@@ -32,6 +32,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ProgressBar;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -39,6 +40,8 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.messaging.FirebaseMessagingService;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -56,6 +59,7 @@ public class ProfileFragment extends Fragment {
     private final int RESULT_PICK_IMAGE = 5;
     private final int REQUEST_STORAGE_PERMISSION = 10;
     private String ONBOARDING_COMPLETED = "profile_onboarding_completed";
+    private ProgressBar mProgress;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
@@ -67,12 +71,13 @@ public class ProfileFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState){
         ImageButton profilePic = getActivity().findViewById(R.id.profileImageButton);
         Button updateButton = getActivity().findViewById(R.id.update_button);
+        mProgress = getView().findViewById(R.id.profile_update_progressBar);
         loadProfilePic();
         profilePic.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 if(ContextCompat.checkSelfPermission(getContext(), Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED){
-                    ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_STORAGE_PERMISSION);
+                    requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_STORAGE_PERMISSION);
                 }
                 else {
                     pickProfilePic();
@@ -99,23 +104,21 @@ public class ProfileFragment extends Fragment {
         updateButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                TextInputLayout nameField = getActivity().findViewById(R.id.name_input_field);
-                String name = nameField.getEditText().getText().toString();
+                TextInputEditText nameField = getActivity().findViewById(R.id.name_input_layout);
+                String name = nameField.getText().toString();
                 TextInputEditText phoneField = getActivity().findViewById(R.id.contact_input_layout);
                 String phoneNumber = phoneField.getText().toString();
 
                 RequestQueue queue = Volley.newRequestQueue(getActivity().getBaseContext());
                 String endpointUrl = Utils.serverUrl+"users";
                 JSONObject userRegJson = new JSONObject();
+                mProgress.setVisibility(View.VISIBLE);
 
                 try {
                     if(preferences.contains("userid"))
                         userRegJson.put("userid", preferences.getString("userid", ""));
                     else {
-                        userRegJson.put("regtoken", "regtoken");
-                        /*userRegJson.put("lat",13.352585);
-                        userRegJson.put("lon",74.793579);
-                        */
+                        userRegJson.put("regtoken", preferences.getString("regtoken","regtoken"));
                     }
                     Log.i("HEAT", "Error"+preferences.getString("userid", ""));
                     userRegJson.put("name", name);
@@ -134,12 +137,14 @@ public class ProfileFragment extends Fragment {
                             new Response.Listener<JSONObject>() {
                                 @Override
                                 public void onResponse(JSONObject response) {
+                                    mProgress.setVisibility(View.INVISIBLE);
                                     Log.i("HEATWAVE", "Sent user details to server");
                                 }
                             },
                             new Response.ErrorListener() {
                                 @Override
                                 public void onErrorResponse(VolleyError error) {
+                                    mProgress.setVisibility(View.INVISIBLE);
                                     Log.i("HEATWAVE_V", "Error:" + error.getMessage());
                                 }
                             }
@@ -151,6 +156,7 @@ public class ProfileFragment extends Fragment {
                             new Response.Listener<JSONObject>() {
                                 @Override
                                 public void onResponse(JSONObject response) {
+                                    mProgress.setVisibility(View.INVISIBLE);
                                     SharedPreferences.Editor editor = preferences.edit();
                                     Log.i("TORRID_REG_RESP", response.toString());
                                     try {
@@ -166,6 +172,7 @@ public class ProfileFragment extends Fragment {
                                 @Override
                                 public void onErrorResponse(VolleyError error) {
                                     error.printStackTrace();
+                                    mProgress.setVisibility(View.INVISIBLE);
                                 }
                             });
                     Log.i("TORRID_REG", "Registering new user");
@@ -193,19 +200,29 @@ public class ProfileFragment extends Fragment {
                 String picturePath = cursor.getString(columnIndex);
                 cursor.close();
 
-                ImageButton proPic = getActivity().findViewById(R.id.profileImageButton);
                 Bitmap proPicBitmap = BitmapFactory.decodeFile(picturePath);
                 proPicBitmap = Bitmap.createScaledBitmap(proPicBitmap, 350, 350, false);
-                proPic.setImageBitmap(proPicBitmap);
                 saveProfilePic(proPicBitmap);
-            }
-            else if(requestCode == REQUEST_STORAGE_PERMISSION){
-                pickProfilePic();
+                loadProfilePic();
             }
         }
 
     }
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String permissions[], @NonNull int[] grantResults) {
+        Log.i("TORRID_PERMISSION", "CALLED");
+        switch (requestCode) {
+            case REQUEST_STORAGE_PERMISSION: {
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Log.i("TORRID_GRANTED", "PICKING");
+                    pickProfilePic();
+                }
+            }
+        }
+    }
     private void pickProfilePic(){
         Intent pickPic = new Intent(
                 Intent.ACTION_PICK,
@@ -245,6 +262,7 @@ public class ProfileFragment extends Fragment {
             FileInputStream inputStream;
             inputStream = new FileInputStream(mypath);
             Bitmap pic = BitmapFactory.decodeStream(inputStream);
+            proPicButton.setBackground(null);
             proPicButton.setImageBitmap(pic);
         }
         catch (FileNotFoundException e){

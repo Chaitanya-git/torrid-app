@@ -47,7 +47,6 @@ public class MainActivity extends AppCompatActivity {
                 new BottomNavigationView.OnNavigationItemSelectedListener() {
                     @Override
                     public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
-                        Log.i("TORRID_NAV", "Navigating...");
                         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
                         switch (menuItem.getItemId()){
                             case R.id.home:
@@ -91,6 +90,13 @@ public class MainActivity extends AppCompatActivity {
                 return super.onOptionsItemSelected(item);
 
         }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String permissions[], @NonNull int[] grantResults) {
+        Log.i("MainACTIVITY", "CALLING super permissions result");
+        super.onRequestPermissionsResult(requestCode,permissions,grantResults);
     }
 
 }
