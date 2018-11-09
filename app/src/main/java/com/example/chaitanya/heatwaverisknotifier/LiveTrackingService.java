@@ -207,47 +207,7 @@ public class LiveTrackingService extends Service {
         try {
             JSONArray data = response.getJSONArray("IsAnomaly");
             if (!data.getBoolean(data.length() - 1)) {
-                final RequestQueue queue = Volley.newRequestQueue(getApplicationContext());
-                final JSONObject affectedUser = new JSONObject();
-                new LocationProvider(getApplicationContext(), null).requestLocation(new LocationProviderResultListener() {
-                    @Override
-                    public void onSuccess(Location location) {
-                        try {
-                            Log.i("CHECK_IF_AFFECTED", "Sending ...");
-                            affectedUser.put("lat", location.getLatitude());
-                            affectedUser.put("lon", location.getLongitude());
-                            affectedUser.put("userid", PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getString("userid", ""));
-                            JsonObjectRequest request = new JsonObjectRequest(Request.Method.PUT, Utils.usersEndpoint, affectedUser,
-                                    new Response.Listener<JSONObject>() {
-                                        @Override
-                                        public void onResponse(JSONObject response) {
-                                            Log.i("AFFECTED_USER_RESPONSE", response.toString());
-                                        }
-                                    },
-                                    new Response.ErrorListener() {
-                                        @Override
-                                        public void onErrorResponse(VolleyError error) {
-                                            Log.i("AFFECTED_USER_ERR", "Error"+error.getMessage());
-                                        }
-                                    }
-                            );
-                            queue.add(request);
-                        }
-                        catch(JSONException e){
-                            Log.e("TORRID_AFFECTED_USR", e.getLocalizedMessage());
-                        }
-                    }
-
-                    @Override
-                    public void onPermissionDenied() {
-                        Log.e("TORRID_AFFECTED_USER", "Permission denied when accessing location");
-                    }
-
-                    @Override
-                    public void onFailure() {
-
-                    }
-                });
+                Utils.notifyAffectedUser(getApplicationContext());
             }
         }
         catch (JSONException e){

@@ -17,7 +17,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
-        android:usesCleartextTraffic="true"
+        android:usesCleartextTraffic="false"
         tools:ignore="GoogleAppIndexingWarning">
         <activity android:name=".MainActivity">
             <intent-filter>
@@ -38,7 +38,10 @@
         </service>
         <service android:name=".LiveTrackingService" />
 
-        <activity android:name=".TipsActivity"></activity>
+        <activity android:name=".TipsActivity" />
+        <activity
+            android:name=".ScrollingTipsActivity"
+            android:label="@string/title_activity_scrolling_tips" />
     </application>
 
 </manifest>

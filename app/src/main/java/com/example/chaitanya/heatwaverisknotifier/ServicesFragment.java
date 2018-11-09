@@ -16,6 +16,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.Switch;
 
@@ -59,6 +60,8 @@ public class ServicesFragment extends Fragment {
         mStatusUpdateService = new StatusUpdateService();
         mLiveTrackingServiceIntent = new Intent(getView().getContext(), LiveTrackingService.class);
         mEnableServiceSwitch.setChecked( preferences.getBoolean(PREFERENCE_ENABLE_BACKGROUND_SERVICE, false) );
+
+        Button sosButton = getView().findViewById(R.id.sos_button);
 
         if(!preferences.getBoolean(PREFERENCE_COMPLETED_ONBOARDING,false)){
             showOnboarding();
@@ -124,7 +127,12 @@ public class ServicesFragment extends Fragment {
             }
         });
         mEnableLiveTrackingSwitch.setChecked(preferences.getBoolean(PREFERENCE_ENABLE_LIVE_TRACKING, false));
-
+        sosButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Utils.notifyAffectedUser(getContext().getApplicationContext());
+            }
+        });
     }
 
     @Override

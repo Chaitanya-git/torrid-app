@@ -87,6 +87,52 @@ class Utils {
         queue.add(request);
     }
 
+    static void notifyAffectedUser(final Context context){
+        final RequestQueue queue = Volley.newRequestQueue(context);
+        final JSONObject affectedUser = new JSONObject();
+        new LocationProvider(context, null).requestLocation(new LocationProviderResultListener() {
+            @Override
+            public void onSuccess(Location location) {
+                try {
+                    Log.i("CHECK_IF_AFFECTED", "Sending ...");
+                    affectedUser.put("lat", location.getLatitude());
+                    affectedUser.put("lon", location.getLongitude());
+                    affectedUser.put("userid", PreferenceManager.getDefaultSharedPreferences(context).getString("userid", ""));
+                    JsonObjectRequest request = new JsonObjectRequest(Request.Method.PUT, Utils.usersEndpoint, affectedUser,
+                            new Response.Listener<JSONObject>() {
+                                @Override
+                                public void onResponse(JSONObject response) {
+                                    Log.i("AFFECTED_USER_RESPONSE", response.toString());
+                                }
+                            },
+                            new Response.ErrorListener() {
+                                @Override
+                                public void onErrorResponse(VolleyError error) {
+                                    Log.i("AFFECTED_USER_ERR", "Error"+error.getMessage());
+                                    error.printStackTrace();
+                                }
+                            }
+                    );
+                    queue.add(request);
+                }
+                catch(JSONException e){
+                    Log.e("TORRID_AFFECTED_USR", e.getLocalizedMessage());
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void onPermissionDenied() {
+                Log.e("TORRID_AFFECTED_USER", "Permission denied when accessing location");
+            }
+
+            @Override
+            public void onFailure() {
+
+            }
+        });
+    }
+
     static void getResultsFromAppServer(Context context, Location location, final ServerResultListener listener){
         RequestQueue queue = Volley.newRequestQueue(context);
 

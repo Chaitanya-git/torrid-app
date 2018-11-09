@@ -10,6 +10,7 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
+import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
 import android.preference.Preference;
@@ -105,80 +106,100 @@ public class ProfileFragment extends Fragment {
             @Override
             public void onClick(View view) {
                 TextInputEditText nameField = getActivity().findViewById(R.id.name_input_layout);
-                String name = nameField.getText().toString();
+                final String name = nameField.getText().toString();
                 TextInputEditText phoneField = getActivity().findViewById(R.id.contact_input_layout);
-                String phoneNumber = phoneField.getText().toString();
+                final String phoneNumber = phoneField.getText().toString();
+                final String endpointUrl = Utils.serverUrl+"users";
 
-                RequestQueue queue = Volley.newRequestQueue(getActivity().getBaseContext());
-                String endpointUrl = Utils.serverUrl+"users";
-                JSONObject userRegJson = new JSONObject();
                 mProgress.setVisibility(View.VISIBLE);
 
-                try {
-                    if(preferences.contains("userid"))
-                        userRegJson.put("userid", preferences.getString("userid", ""));
-                    else {
-                        userRegJson.put("regtoken", preferences.getString("regtoken","regtoken"));
-                    }
-                    Log.i("HEAT", "Error"+preferences.getString("userid", ""));
-                    userRegJson.put("name", name);
-                    userRegJson.put("num", Long.valueOf(phoneNumber));
-                    SharedPreferences.Editor editor = preferences.edit();
-                    editor.putString(USER_NAME,name);
-                    editor.putString(PHONE, phoneNumber);
-                    editor.apply();
-                } catch (JSONException e) {
-                    Log.i("HEATWAVE", e.getLocalizedMessage());
-                    e.printStackTrace();
-                }
-                JsonObjectRequest request;
-                if(preferences.contains("userid")) {
-                    request = new JsonObjectRequest(Request.Method.PUT, endpointUrl, userRegJson,
-                            new Response.Listener<JSONObject>() {
-                                @Override
-                                public void onResponse(JSONObject response) {
-                                    mProgress.setVisibility(View.INVISIBLE);
-                                    Log.i("HEATWAVE", "Sent user details to server");
-                                }
-                            },
-                            new Response.ErrorListener() {
-                                @Override
-                                public void onErrorResponse(VolleyError error) {
-                                    mProgress.setVisibility(View.INVISIBLE);
-                                    Log.i("HEATWAVE_V", "Error:" + error.getMessage());
-                                }
+                new LocationProvider(getContext(), getActivity()).requestLocation(new LocationProviderResultListener() {
+                    @Override
+                    public void onSuccess(Location location) {
+                        RequestQueue queue = Volley.newRequestQueue(getActivity().getBaseContext());
+                        JSONObject userRegJson = new JSONObject();
+                        try {
+                            if(preferences.contains("userid"))
+                                userRegJson.put("userid", preferences.getString("userid", ""));
+                            else {
+                                userRegJson.put("regtoken", preferences.getString("regtoken","regtoken"));
+                                userRegJson.put("lat",location.getLatitude());
+                                userRegJson.put("lon",location.getLongitude());
                             }
-                    );
-                    Log.i("TORRID_REG", "Updating details");
-                }
-                else {
-                    request = new JsonObjectRequest(Request.Method.POST, endpointUrl, userRegJson,
-                            new Response.Listener<JSONObject>() {
-                                @Override
-                                public void onResponse(JSONObject response) {
-                                    mProgress.setVisibility(View.INVISIBLE);
-                                    SharedPreferences.Editor editor = preferences.edit();
-                                    Log.i("TORRID_REG_RESP", response.toString());
-                                    try {
-                                        editor.putString("userid", response.getJSONObject("data").getString("_id"));
-                                    } catch (JSONException e) {
-                                        Log.e("TORRID_USER_REG_ERROR", e.getLocalizedMessage());
-                                        e.printStackTrace();
+                            Log.i("HEAT", "Error"+preferences.getString("userid", ""));
+                            userRegJson.put("name", name);
+                            //Log.i("PHONE_NUMBER", ""+Long.valueOf(phoneNumber));
+                            userRegJson.put("phone", Long.valueOf(phoneNumber));
+                            SharedPreferences.Editor editor = preferences.edit();
+                            editor.putString(USER_NAME,name);
+                            editor.putString(PHONE, phoneNumber);
+
+                            editor.apply();
+                        } catch (JSONException e) {
+                            Log.i("HEATWAVE", e.getLocalizedMessage());
+                            e.printStackTrace();
+                        }
+                        JsonObjectRequest request;
+                        if(preferences.contains("userid")) {
+                            request = new JsonObjectRequest(Request.Method.PUT, endpointUrl, userRegJson,
+                                    new Response.Listener<JSONObject>() {
+                                        @Override
+                                        public void onResponse(JSONObject response) {
+                                            mProgress.setVisibility(View.INVISIBLE);
+                                            Log.i("HEATWAVE", "Sent user details to server");
+                                        }
+                                    },
+                                    new Response.ErrorListener() {
+                                        @Override
+                                        public void onErrorResponse(VolleyError error) {
+                                            mProgress.setVisibility(View.INVISIBLE);
+                                            Log.i("HEATWAVE_V", "Error:" + error.getMessage());
+                                        }
                                     }
-                                    editor.apply();
-                                }
-                            },
-                            new Response.ErrorListener() {
-                                @Override
-                                public void onErrorResponse(VolleyError error) {
-                                    error.printStackTrace();
-                                    mProgress.setVisibility(View.INVISIBLE);
-                                }
-                            });
-                    Log.i("TORRID_REG", "Registering new user");
-                }
-                Log.i("TORRID_JSON", userRegJson.toString());
-                queue.add(request);
+                            );
+                            Log.i("TORRID_REG", "Updating details");
+                        }
+                        else {
+                            request = new JsonObjectRequest(Request.Method.POST, endpointUrl, userRegJson,
+                                    new Response.Listener<JSONObject>() {
+                                        @Override
+                                        public void onResponse(JSONObject response) {
+                                            mProgress.setVisibility(View.INVISIBLE);
+                                            SharedPreferences.Editor editor = preferences.edit();
+                                            Log.i("TORRID_REG_RESP", response.toString());
+                                            try {
+                                                editor.putString("userid", response.getJSONObject("data").getString("_id"));
+                                            } catch (JSONException e) {
+                                                Log.e("TORRID_USER_REG_ERROR", e.getLocalizedMessage());
+                                                e.printStackTrace();
+                                            }
+                                            editor.apply();
+                                        }
+                                    },
+                                    new Response.ErrorListener() {
+                                        @Override
+                                        public void onErrorResponse(VolleyError error) {
+                                            error.printStackTrace();
+                                            mProgress.setVisibility(View.INVISIBLE);
+                                        }
+                                    });
+                            Log.i("TORRID_REG", "Registering new user");
+                        }
+                        Log.i("TORRID_JSON", userRegJson.toString());
+                        queue.add(request);
+                    }
+
+                    @Override
+                    public void onPermissionDenied() {
+                        mProgress.setVisibility(View.INVISIBLE);
+                    }
+
+                    @Override
+                    public void onFailure() {
+                        mProgress.setVisibility(View.INVISIBLE);
+                    }
+                });
+
             }
         });
     }

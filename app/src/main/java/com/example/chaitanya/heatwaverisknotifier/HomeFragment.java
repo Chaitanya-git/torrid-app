@@ -101,7 +101,7 @@ public class HomeFragment extends Fragment{
 
         switch (item.getItemId()) {
             case R.id.tips_button:
-                Intent tipsIntent = new Intent(getContext(), TipsActivity.class);
+                Intent tipsIntent = new Intent(getContext(), ScrollingTipsActivity.class);
                 startActivity(tipsIntent);
             default:
                 return super.onOptionsItemSelected(item);
